@@ -22,15 +22,14 @@ use Illuminate\Support\Facades\Route;
 Route::group([
     'prefix' => 'auth'
 ], function () {
-    // Route::post('login', 'Auth\AuthController@login');
-    // Route::post('signup', 'Auth\AuthController@signUp');
+    Route::post('login', 'Auth\AuthController@login');
+    Route::post('signup', 'Auth\AuthController@signUp');
 
     Route::group([
       'middleware' => 'auth:api'
     ], function() {
         Route::get('logout', 'Auth\AuthController@logout');
         Route::get('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@getPedidoSiesa');
-
-        Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@subirPedido');
+        Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@subirPedidoSiesa');
     });
 });

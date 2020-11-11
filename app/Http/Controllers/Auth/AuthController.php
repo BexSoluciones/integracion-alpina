@@ -16,6 +16,7 @@ class AuthController extends Controller
      */
     public function signUp(Request $request)
     {
+        Log::info('ingresando a signup');
         $request->validate([
             'name' => 'required|string',
             'email' => 'required|string|email|unique:users',
