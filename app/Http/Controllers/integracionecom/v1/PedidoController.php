@@ -4,35 +4,17 @@ namespace App\Http\Controllers\integracionecom\v1;
 
 use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
+use App\Traits\TraitHerramientas;
+use App\Models\ConexionesModel;
 use Illuminate\Http\Request;
 use Log;
 use Storage;
-use App\Traits\TraitHerramientas;
 use Validator;
 
 class PedidoController extends Controller
 {
 
     use TraitHerramientas;
-
-   
-
-    public static  $datosEncabPedido = [
-        'numero_pedido'=>'',
-        'centro_operacion_bodega'=>'',
-        'tipo_cliente'=>'',
-        'fecha_pedido'=>'',
-        'nit_cliente'=>'', 
-        'sucursal_tercero'=>'', 
-        'observaciones_pedido'=>'',
-        'detalle_pedido'=>''
-    ];
-
-    public static  $datosDetallePedido = array(
-        'codigo_producto', 'bodega', 'lista_precio', 'centro_operacion',
-        'numero_pedido', 'cantidad', 'precio_producto'
-    );
-
 
     public function getPedidoSiesa()
     {
@@ -63,20 +45,31 @@ class PedidoController extends Controller
     public function subirPedidoSiesa(Request $request)
     {
 
-        return $this->validarEstructuraJson($request);
+        $respValidacion = $this->validarEstructuraJson($request);
 
-        exit();
+        Log::info($respValidacion);
 
-        foreach ($pedidos as $key => $pedido) {
+        if ($respValidacion['valid'] == false) {
 
-            $detallePedidos = $this->getDetallePedido($pedido->id_order);
+            return response()->json([
+                'created' => false,
+                'errors' => $respValidacion['errors'],
+            ], 400);
 
-            if (count($detallePedidos) > 0) {
+        }
 
-                $this->info("pedido->" . $pedido->id_order);
-                $this->info("co_bodega->" . $pedido->co_bodega);
-                $this->info("tipo cliente->" . $pedido->tipo_cliente);
-                $this->info("fecha pedido->" . $pedido->fecha_pedido    );
+        
+
+        // foreach ($pedidos as $key => $pedido) {
+
+            $pedido= $request->input('data')[0];
+            $detallesPedido = $request->input('data.0.detalle_pedido'); 
+            Log::info($pedido);
+            Log::info($detallesPedido);
+
+            if (count($detallesPedido) > 0) {
+
+                
                 $cadena = "";
                 $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
 
@@ -88,23 +81,23 @@ class PedidoController extends Controller
                 $cadena .= '1'; //Indicador para liquidar impuestos
                 $cadena .= '1'; //Indica si el numero consecutivo de docto es manual o automático
                 $cadena .= '1'; //Indicador de contacto
-                $cadena .= $pedido->co_bodega; //Centro de operación del documento
+                $cadena .= $pedido['centro_operacion_bodega']; //Centro de operación del documento
                 $cadena .= 'PEM'; //Tipo de documento
-                $cadena .= str_pad($pedido->id_order, 8, "0", STR_PAD_LEFT); //Numero documento
-                $cadena .= $pedido->fecha_pedido; //Fecha del documento
+                $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Numero documento
+                $cadena .= $pedido['fecha_pedido']; //Fecha del documento
                 $cadena .= '502'; //Clase interna del documento
                 $cadena .= '2'; //Estado del documento
                 $cadena .= '0'; //Indicador backorder del documento
-                $cadena .= str_pad($pedido->nit_tercero, 15, " ", STR_PAD_RIGHT); //Tercero cliente a facturar
-                $cadena .= $pedido->sucursal_tercero; //Sucursal cliente a facturar
-                $cadena .= str_pad($pedido->nit_tercero, 15, " ", STR_PAD_RIGHT); //Tercero cliente a despachar
-                $cadena .= $pedido->sucursal_tercero; //Sucursal cliente a despachar
-                $cadena .= $pedido->tipo_cliente; //Tipo de cliente
-                $cadena .= $pedido->co_bodega; //Centro de operacion de la factura
+                $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a facturar
+                $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a facturar
+                $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a despachar
+                $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a despachar
+                $cadena .= $pedido['tipo_cliente']; //Tipo de cliente
+                $cadena .= $pedido['centro_operacion_bodega']; //Centro de operacion de la factura
                 $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha Entrega pedido
                 $cadena .= '000'; //Nro. dias de entrega del documento
-                $cadena .= str_pad($pedido->id_order, 15, "Y", STR_PAD_LEFT); //Orden de compra del Documento
-                $cadena .= str_pad($pedido->id_order, 10, "0", STR_PAD_LEFT); //Referencia del documento
+                $cadena .= str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT); //Orden de compra del Documento
+                $cadena .= str_pad($pedido['numero_pedido'], 10, "0", STR_PAD_LEFT); //Referencia del documento
                 $cadena .= str_pad('GENERICO', 10, " ", STR_PAD_RIGHT); //Codigo de cargue del documento
                 $cadena .= 'COP'; //Codigo de moneda del documento
                 $cadena .= 'COP'; //Moneda base de conversión
@@ -112,12 +105,11 @@ class PedidoController extends Controller
                 $cadena .= 'COP'; //Moneda local
                 $cadena .= '00000001.0000'; //Tasa local
                 $cadena .= 'C08'; //Condicion de pago *preguntar*
-                $cadena .= '0'; //Estado de impresión del documento
-                $observacionesPedido = trim(html_entity_decode($pedido->observaciones_pedido));
-                $cadena .= str_pad($this->sanear_string($observacionesPedido), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
+                $cadena .= '0'; //Estado de impresión del documento                
+                $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido'])), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
                 $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
                 $cadena .= '000'; //Punto de envio
-                $cadena .= str_pad('500', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido
+                $cadena .= str_pad('500', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
                 $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //Contacto
                 $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 1
                 $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 2
@@ -136,11 +128,11 @@ class PedidoController extends Controller
                 //Creacion Detalle - movimientos pedido
                 $contador = 3;
                 $contadorDetallePedido = 1;
-                foreach ($detallePedidos as $key => $detallePedido) {
+                foreach ($detallesPedido as $key => $detallePedido) {
                     //---Declarando variables
-                    $bodega = explode('-', $detallePedido->bodega)[0];
-                    $listaPrecio = explode('-', $detallePedido->bodega)[1];
-                    $centroOperacion = explode('-', $detallePedido->bodega)[2];
+                    $bodega = $detallePedido['bodega'];
+                    $listaPrecio = $detallePedido['lista_precio'];
+                    $centroOperacion = $detallePedido['centro_operacion'];
 
                     //----armando cadena
 
@@ -151,9 +143,9 @@ class PedidoController extends Controller
                     $cadena .= '001'; //compañia
                     $cadena .= $centroOperacion; //Centro de operacion
                     $cadena .= 'PEM'; //Tipo de documento
-                    $cadena .= str_pad($pedido->id_order, 8, "0", STR_PAD_LEFT); //Consecutivo de documento
+                    $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Consecutivo de documento
                     $cadena .= str_pad($contadorDetallePedido, 10, "0", STR_PAD_LEFT); //Numero de registro --> hacer contador
-                    $cadena .= str_pad($detallePedido->codigo_producto, 7, "0", STR_PAD_LEFT); //Item
+                    $cadena .= str_pad($detallePedido['codigo_producto'], 7, "0", STR_PAD_LEFT); //Item
                     $cadena .= str_pad('', 50, " ", STR_PAD_LEFT); //Referencia item
                     $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Codigo de barras
                     $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Extencion 1
@@ -170,9 +162,9 @@ class PedidoController extends Controller
                     $cadena .= '000'; //Nro. dias de entrega del documento
                     $cadena .= $listaPrecio; //Lista de precio-->agregar al migrar productos
                     $cadena .= 'UNID'; //Unidad de medida-->pendiente
-                    $cadena .= str_pad(intval($detallePedido->product_quantity), 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad base
+                    $cadena .= str_pad(intval($detallePedido['cantidad']), 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad base
                     $cadena .= str_pad('', 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad adicional
-                    $cadena .= str_pad(intval($detallePedido->product_price), 15, "0", STR_PAD_LEFT) . '.0000'; //Precio unitario
+                    $cadena .= str_pad(intval($detallePedido['precio_producto']), 15, "0", STR_PAD_LEFT) . '.0000'; //Precio unitario
                     $cadena .= '0'; //Impuestos asumidos
                     $cadena .= str_pad('', 255, " ", STR_PAD_LEFT); //Notas
                     $cadena .= str_pad('', 2000, " ", STR_PAD_LEFT); //Descripcion
@@ -186,11 +178,11 @@ class PedidoController extends Controller
 
                 $lineas = explode("\n", $cadena);
 
-                $nombreArchivo = str_pad($pedido->id_order, 8, "0", STR_PAD_LEFT) . '.txt';
+                $nombreArchivo = str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT) . '.txt';
                 Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
-                // $xmlPedido = $this->crearXmlPedido($lineas, $pedido->id_order);
+                $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
 
-                // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido->id_order, 15, "Y", STR_PAD_LEFT))) {
+                // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
                 //     $this->info('no existe el pedido ' . $pedido->id_order);
                 //     // $resp = $this->getWebServiceSiesa(13)->importarXml($xmlPedido);
                 //     if (empty($resp)) {
@@ -223,9 +215,9 @@ class PedidoController extends Controller
 
             }
 
-        }
+        // }
 
-        $this->info('termino');
+        dd('termino');
         return 0;
 
     }
@@ -233,7 +225,7 @@ class PedidoController extends Controller
     public function crearXmlPedido($lineas, $idOrder)
     {
 
-        $datosConexionSiesa = $this->getConexionesModel()->getConexionXid(13);
+        $datosConexionSiesa = $this->getConexionesModel()->getConexionXid(14);
         $xmlPedido = "<?xml version='1.0' encoding='utf-8'?>
         <Importar>
         <NombreConexion>" . $datosConexionSiesa->siesa_conexion . "</NombreConexion>
@@ -251,51 +243,145 @@ class PedidoController extends Controller
         </Importar>";
 
         $nombreArchivo = str_pad($idOrder, 8, "0", STR_PAD_LEFT) . '.xml';
-        //Storage::disk('local')->put('pandapan/pedidos/' . $nombreArchivo, $xmlPedido);
+        Storage::disk('local')->put('pandapan/pedidos/' . $nombreArchivo, $xmlPedido);
 
         return $datos;
 
     }
 
-    public function validarEstructuraJson($request){
+    public function validarEstructuraJson($request)
+    {
 
-        $this->data=$request->input('data');
-        $formatoValido=true;
-        $formatoValido=$request->input('data')?? false;
-        if(!$formatoValido){
-            return response()->json( [
-                'created' => false,
-                'errors'  => "Formato json no válido :(, por favor dirijase a la documentacion"
-            ], 400);
+        //--------Valido que exista data
+        $formatoValido = true;
+        $formatoValido = $request->input('data') ?? false;
+        if (!$formatoValido) {
+            return [
+                'valid' => false,
+                'errors' => "Formato json no válido, data no está definido",
+            ];
         }
+
+        //--------Valido que exista detalle pedido
+        $formatoValido = true;
+        $formatoValido = $request->input('data.0.detalle_pedido') ?? false;
+        if (!$formatoValido) {
+            return [
+                'valid' => false,
+                'errors' => "Formato json no válido, detalle pedido no está definido",
+            ];
+        }
+
+        //--------Defino data
+        $this->data = $request->input('data');
+
+        //--------Valido datos encabezado pedido
+        $respValidarEncabezado = $this->validarEncabezadoPedido($this->data[0]);
+
+        //--------Valido datos detalle pedido
+        $item = 1;
+        $erroresDetallePedido = [];
+        foreach ($this->data[0]["detalle_pedido"] as $key => $detallePedido) {
+
+            $respValidacion = $this->validarDetallePedido($detallePedido);
+            if ($respValidacion['valid'] == false) {
+                $erroresDetallePedido[$key]['item_' . $item] = $respValidacion['errors'];
+            }
+
+            $item++;
+        }
+
         
 
+        if ($respValidarEncabezado['valid'] == false || count($erroresDetallePedido) > 0) {
 
-        $this->encabezado=$this->decodificarArray($this->data[0]);
-        // $this->detalle_pedido=$this->data[0]['detalle_pedido'];        
-        
-        $rules = [
-            'numero_pedido'               => 'required|max:8',
-            'centro_operacion_bodega'     => 'required|max:8',
-            'tipo_cliente'                => 'numeric|required|max:4',
-            'fecha_pedido'                => 'required|date_format:"Ymd"',
-            'nit_cliente'                 => 'required|max:15',
-            'sucursal_tercero'            => 'required|max:15',
-            'observaciones_pedido'        => 'max:2000',            
-        ];
-
-
-        $validator = Validator::make($this->encabezado, $rules);
-        if ($validator->fails()) {
-            return response()->json( [
-                'created' => false,
-                'errors'  => $validator->errors()
-            ], 400);
+            return [
+                'valid' => false,
+                'errors' => [
+                    'ErroresEncabezadoPedido' => $respValidarEncabezado['errors'],
+                    'ErroresDetallePedido' => $erroresDetallePedido,
+                ],
+            ];
+        } else {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
         }
+
     }
 
-}
+    public function validarEncabezadoPedido($datosEncPedido)
+    {
+        //------Elimino detalle pedido el cual no esta dentro de esta validación
+        unset($datosEncPedido['detalle_pedido']);
 
+        $datosEncPedido = $this->decodificarArray($datosEncPedido);
+
+        $rules = [
+            'numero_pedido' => 'required|max:8',
+            'centro_operacion_bodega' => 'required|max:8',
+            'tipo_cliente' => 'required|digits:4',
+            'fecha_pedido' => 'required|date_format:"Ymd"',
+            'nit_cliente' => 'required|digits_between:1,15',
+            'sucursal_cliente' => 'required|digits_between:1,15',
+            'observaciones_pedido' => 'max:2000',
+        ];
+
+        $validator = Validator::make($datosEncPedido, $rules);
+
+        
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors(),
+            ];
+        } else {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
+        }
+
+    }
+
+    public function validarDetallePedido($datosDetallePedido)
+    {
+
+        $rules = [
+            'codigo_producto' => 'required|max:7',
+            'bodega' => 'required|size:5',
+            'lista_precio' => 'required|size:3',
+            'centro_operacion' => 'required|size:3',
+            'cantidad' => 'required|digits_between:1,15',
+            'precio_producto' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
+        ];
+
+        $validator = Validator::make($datosDetallePedido, $rules);
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors(),
+            ];
+        } else {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
+        }
+
+    }
+
+    public function getConexionesModel()
+    {
+        return new ConexionesModel();
+    }
+
+    
+
+    
+
+}
 
 // {
 //     "data":[
@@ -313,7 +399,7 @@ class PedidoController extends Controller
 //                         "bodega":"00128",
 //                         "lista_precio":"ECOM",
 //                         "centro_operacion":"001",
-//                         "numero_pedido": "PEC80001",                        
+//                         "numero_pedido": "PEC80001",
 //                         "cantidad":10,
 //                         "precio_producto": 2550
 //                     },
@@ -322,7 +408,7 @@ class PedidoController extends Controller
 //                         "bodega":"00128",
 //                         "lista_precio":"ECOM",
 //                         "centro_operacion":"001",
-//                         "numero_pedido": "PEC80001",                        
+//                         "numero_pedido": "PEC80001",
 //                         "cantidad":30,
 //                         "precio_producto": 4800
 //                     }
@@ -331,4 +417,3 @@ class PedidoController extends Controller
 //         }
 //     ]
 // }
-
