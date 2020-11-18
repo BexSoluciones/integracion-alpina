@@ -60,7 +60,7 @@ class PedidoController extends Controller
 
         
 
-        // foreach ($pedidos as $key => $pedido) {
+        
 
             $pedido= $request->input('data')[0];
             $detallesPedido = $request->input('data.0.detalle_pedido'); 
@@ -178,15 +178,25 @@ class PedidoController extends Controller
 
                 $lineas = explode("\n", $cadena);
 
-                $nombreArchivo = str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT) . '.txt';
+                $nombreArchivo = str_pad($pedido['numero_pedido'], 15, "0", STR_PAD_LEFT) . '.txt';
                 Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
                 $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
 
+                if (!empty($_SERVER['HTTP_CLIENT_IP'])) { 
+                    $ip = $_SERVER['HTTP_CLIENT_IP']; 
+                } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) { 
+                    $ip = $_SERVER['HTTP_X_FORWARDED_FOR']; 
+                } else { 
+                    $ip = $_SERVER['REMOTE_ADDR']; 
+                } 
+
+                Log::info($ip);
+
                 // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-                //     $this->info('no existe el pedido ' . $pedido->id_order);
-                //     // $resp = $this->getWebServiceSiesa(13)->importarXml($xmlPedido);
+                //     dump('no existe el pedido ' . $pedido['numero_pedido']);
+                //      $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
                 //     if (empty($resp)) {
-                //         $this->cambiarEstadoPedido($pedido->id_order, 15);
+                //         // $this->cambiarEstadoPedido($pedido->id_order, 15);
                 //         $this->info('todo ok');
                 //     } else {
                 //         //  $resp;
@@ -199,26 +209,24 @@ class PedidoController extends Controller
                 //             }
 
                 //         }
-                //         $this->info($mensaje);
-                //         $this->enviarMensaje($pedido->id_order, $mensaje, $pedido->id_customer, $pedido->email);
-                //         $this->cambiarEstadoPedido($pedido->id_order, 14);
-                //         $this->info('error al enviar pedido');
-                //         // $var = print_r($resp->NewDataSet, true);
-
-                //         // echo "\n" . "ANY: " . $var;
+                //         dump($mensaje);
+                //         // $this->enviarMensaje($pedido->id_order, $mensaje, $pedido->id_customer, $pedido->email);
+                //         // $this->cambiarEstadoPedido($pedido->id_order, 14);
+                //         // $this->info('error al enviar pedido');
+                        
                 //     }
 
-                // } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido->id_order, 15, "Y", STR_PAD_LEFT))) {
+                // } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
                 //     $this->info('ya existe el pedido ' . $pedido->id_order);
                 //     $this->cambiarEstadoPedido($pedido->id_order, 15);
                 // }
 
             }
 
-        // }
-
-        dd('termino');
-        return 0;
+            return response()->json([
+                'created' => true,
+                'errors' => 0,
+            ], 200);
 
     }
 
@@ -242,7 +250,7 @@ class PedidoController extends Controller
         $xmlPedido .= "        </Datos>
         </Importar>";
 
-        $nombreArchivo = str_pad($idOrder, 8, "0", STR_PAD_LEFT) . '.xml';
+        $nombreArchivo = str_pad($idOrder, 15, "Y", STR_PAD_LEFT) . '.xml';
         Storage::disk('local')->put('pandapan/pedidos/' . $nombreArchivo, $xmlPedido);
 
         return $datos;
@@ -375,6 +383,24 @@ class PedidoController extends Controller
     public function getConexionesModel()
     {
         return new ConexionesModel();
+    }
+
+    public function existePedidoSiesa($idCia, $tipoDocumento, $numDoctoReferencia)
+    {
+
+        $parametros = [
+            ['PARAMETRO1' => $idCia],
+            ['PARAMETRO2' => $tipoDocumento],
+            ['PARAMETRO3' => $numDoctoReferencia],
+        ];
+        $resultado = $this->getWebServiceSiesa(27)->ejecutarConsulta($parametros);
+
+        if (!empty($resultado)) {
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     

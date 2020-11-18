@@ -2,9 +2,6 @@
 
 namespace App\Traits;
 
-use Exception;
-use Illuminate\Http\Request;
-
 trait TraitHerramientas
 {
     public static function decodificarArray($array)
@@ -16,26 +13,27 @@ trait TraitHerramientas
         return $newArray;
     }
 
-    public static function primerLetraMayuscula($array,$excepto=null){
+    public static function primerLetraMayuscula($array, $excepto = null)
+    {
         $newArray = [];
         foreach ($array as $key => $value) {
 
-            if(empty($excepto)){
+            if (empty($excepto)) {
                 $newArray[$key] = ucfirst($value);
-            }else{
+            } else {
                 if (!in_array($key, $excepto)) {
-                    $newArray[$key] = ucfirst($value);                
-                }else{
-                    $newArray[$key] =$value;               
+                    $newArray[$key] = ucfirst($value);
+                } else {
+                    $newArray[$key] = $value;
                 }
             }
-            
-            
+
         }
         return $newArray;
     }
 
-    public function quitarSaltosLinea($string){
+    public function quitarSaltosLinea($string)
+    {
         //se normaliza saltos de linea
         $string = str_replace(array("\r\n", "\r"), "\n", $string);
         //reemplaza saltos de linea por espacios
@@ -105,5 +103,27 @@ trait TraitHerramientas
     {
         $nuevafecha = date($formato, (strtotime('+' . $cantidad . ' day', strtotime($fecha))));
         return $nuevafecha;
+    }
+
+    public function getIpCliente()
+    {
+        $ipaddress = '';
+        if (getenv('HTTP_CLIENT_IP')) {
+            $ipaddress = getenv('HTTP_CLIENT_IP');
+        } else if (getenv('HTTP_X_FORWARDED_FOR')) {
+            $ipaddress = getenv('HTTP_X_FORWARDED_FOR');
+        } else if (getenv('HTTP_X_FORWARDED')) {
+            $ipaddress = getenv('HTTP_X_FORWARDED');
+        } else if (getenv('HTTP_FORWARDED_FOR')) {
+            $ipaddress = getenv('HTTP_FORWARDED_FOR');
+        } else if (getenv('HTTP_FORWARDED')) {
+            $ipaddress = getenv('HTTP_FORWARDED');
+        } else if (getenv('REMOTE_ADDR')) {
+            $ipaddress = getenv('REMOTE_ADDR');
+        } else {
+            $ipaddress = 'UNKNOWN';
+        }
+
+        return $ipaddress;
     }
 }
