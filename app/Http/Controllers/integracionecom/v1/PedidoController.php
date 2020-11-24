@@ -44,6 +44,7 @@ class PedidoController extends Controller
 
     public function subirPedidoSiesa(Request $request)
     {
+        
 
         $respValidacion = $this->validarEstructuraJson($request);
 
@@ -53,6 +54,7 @@ class PedidoController extends Controller
 
             return response()->json([
                 'created' => false,
+                'code'=>412,
                 'errors' => $respValidacion['errors'],
             ], 400);
 
@@ -182,14 +184,8 @@ class PedidoController extends Controller
                 Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
                 $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
 
-                if (!empty($_SERVER['HTTP_CLIENT_IP'])) { 
-                    $ip = $_SERVER['HTTP_CLIENT_IP']; 
-                } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) { 
-                    $ip = $_SERVER['HTTP_X_FORWARDED_FOR']; 
-                } else { 
-                    $ip = $_SERVER['REMOTE_ADDR']; 
-                } 
-
+                
+                $ip= $this->getIpCliente();
                 Log::info($ip);
 
                 // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
@@ -225,8 +221,9 @@ class PedidoController extends Controller
 
             return response()->json([
                 'created' => true,
+                'code'=>201,
                 'errors' => 0,
-            ], 200);
+            ], 201);
 
     }
 
@@ -337,7 +334,8 @@ class PedidoController extends Controller
         ];
 
         $validator = Validator::make($datosEncPedido, $rules);
-
+        $errors=$validator->errors();
+        
         
         if ($validator->fails()) {
             return [
@@ -358,7 +356,7 @@ class PedidoController extends Controller
 
         $rules = [
             'codigo_producto' => 'required|max:7',
-            'bodega' => 'required|size:5',
+            'bodega' => 'required|numeric|size:5',
             'lista_precio' => 'required|size:3',
             'centro_operacion' => 'required|size:3',
             'cantidad' => 'required|digits_between:1,15',
@@ -366,6 +364,7 @@ class PedidoController extends Controller
         ];
 
         $validator = Validator::make($datosDetallePedido, $rules);
+        
         if ($validator->fails()) {
             return [
                 'valid' => false,
