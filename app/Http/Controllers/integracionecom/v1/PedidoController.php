@@ -21,19 +21,7 @@ class PedidoController extends Controller
 
         $objWebserviceSiesa = $this->getWebServiceSiesa(14);
         $pedidos = $objWebserviceSiesa->ejecutarConsulta();
-
-        $arrayValues = [];
-        $acumValues = 0;
-        foreach ($pedidos as $key => $value) {
-            $arrayValuesRow = [];
-            foreach ($value as $keyb => $valores) {
-                $arrayValuesRow[(String) $keyb] = (String) $valores;
-            }
-            $arrayValues[$acumValues] = (array) $arrayValuesRow;
-            $acumValues++;
-        }
-
-        return response()->json($arrayValues, 200);
+        return response()->json($pedidos, 200);
 
     }
 
@@ -294,9 +282,7 @@ class PedidoController extends Controller
             }
 
             $item++;
-        }
-
-        
+        }        
 
         if ($respValidarEncabezado['valid'] == false || count($erroresDetallePedido) > 0) {
 

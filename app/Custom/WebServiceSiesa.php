@@ -5,6 +5,7 @@ namespace App\Custom;
 use App\Models\ConexionesModel;
 use Log;
 use SoapClient;
+use DB;
 
 class WebServiceSiesa
 {
@@ -23,7 +24,7 @@ class WebServiceSiesa
     public function __construct($idConexion)
     {
         $config = $this->getConexionesModel()->getConexionXid($idConexion);
-        
+
         $this->url = $config->siesa_url;
         $this->proxyHost = $config->siesa_proxy_host;
         $this->proxyPort = $config->siesa_proxy_port;
@@ -38,14 +39,14 @@ class WebServiceSiesa
 
     }
 
-    public function ejecutarConsulta($parametrosSql=null)
+    public function ejecutarConsulta($parametrosSql = null)
     {
-        if(is_array($parametrosSql)){
+        if (is_array($parametrosSql)) {
             $parm = $this->getParametrosXml($parametrosSql);
-        }else{
+        } else {
             $parm = $this->getParametrosXml();
         }
-        
+
         try
         {
             $client = new SoapClient($this->url, $parm);
@@ -54,9 +55,9 @@ class WebServiceSiesa
             $any = @simplexml_load_string($result->EjecutarConsultaXMLResult->any);
 
             if (@is_object($any->NewDataSet->Resultado)) {
-               Log::info($any->NewDataSet->Resultado);
-                return $any->NewDataSet->Resultado;
-            }            
+                
+                return $this->convertirObjetosArrays($any->NewDataSet->Resultado);
+            }
 
             if (@$any->NewDataSet->Table) {
                 foreach ($any->NewDataSet->Table as $key => $value) {
@@ -75,73 +76,52 @@ class WebServiceSiesa
         }
     }
 
-
     public function importarXml($xml)
-    {        
-		
-		
-		
+    {
 
-		try
-		{
+        try
+        {
 
-            $pvstrDatos 			= "<?xml version='1.0' encoding='utf-8'?>
-									<Importar>  
-									   <NombreConexion>" . $this->conexion . "</NombreConexion>  
-									   <IdCia>" . $this->idCia . "</IdCia> 
-									   <Usuario>" . $this->usuario . "</Usuario> 
-									   <Clave>" . $this->clave . "</Clave> 
-									<Datos> 
-									   ".$xml."
+            $pvstrDatos = "<?xml version='1.0' encoding='utf-8'?>
+									<Importar>
+									   <NombreConexion>" . $this->conexion . "</NombreConexion>
+									   <IdCia>" . $this->idCia . "</IdCia>
+									   <Usuario>" . $this->usuario . "</Usuario>
+									   <Clave>" . $this->clave . "</Clave>
+									<Datos>
+									   " . $xml . "
 									</Datos>
                                     </Importar>";
-                                     
-			
-			$parm 					= array(); //parm de la llamada
-			$parm['pvstrDatos'] 	= $pvstrDatos;
-			$parm['printTipoError'] = '1';
-			$parm['cache_wsdl'] 	= 0; //new
-	        
 
-			$client 				= new SoapClient($this->url, $parm);
-			$result 				= $client->ImportarXML($parm);//llamamos al métdo que nos interesa con los parámetros
-            // echo "<pre>"; 
-            // print_r($result);
-            // exit();
-            $schema 				= simplexml_load_string($result->ImportarXMLResult->schema);
-			return $any 					= simplexml_load_string($result->ImportarXMLResult->any);
-			
-            // if(empty($any)){
-            //     return true;
-            // }else{
-                
-            // }
-			// //$print = print_r($result, true);
-			// //echo "\n"."echo: ".$print;
-		
-			// $var = print_r($any, true);
-			// echo "\n"."ANY: ".$var;
+            $parm = array(); //parm de la llamada
+            $parm['pvstrDatos'] = $pvstrDatos;
+            $parm['printTipoError'] = '1';
+            $parm['cache_wsdl'] = 0; //new
+
+            $client = new SoapClient($this->url, $parm);
+            $result = $client->ImportarXML($parm); //llamamos al métdo que nos interesa con los parámetros
+            
+            $schema = simplexml_load_string($result->ImportarXMLResult->schema);
+            return $any = simplexml_load_string($result->ImportarXMLResult->any);
+
+           
 
         } catch (Exception $e) {
-            $error = $e->getMessage();
-            $error;
-            //Log::info($error);
+            $error = $e->getMessage();   
+            Log::error($error);         
         }
-      
-        
-        
+
     }
 
     public function armarTablaInsertSql($tablaDestino)
     {
 
         $datos = $this->ejecutarConsulta();
-        
+
         if (!empty($datos)) {
 
             //----se arma la tabla
             $campos = array_keys((array) $datos[0]);
-            //print_r($campos);
             $nuevoArrayCampos = [];
             foreach ($campos as $key => $campo) {
                 $nuevoArrayCampos[$key] = $campo . ' text';
@@ -150,38 +130,36 @@ class WebServiceSiesa
 
             $sqlTabla = "CREATE TABLE $tablaDestino  ( $camposTabla ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; ";
 
-            
-
             //-----se arma los insert
             $camposInsertSql = implode(',', $campos);
-			$sqlInsert = "INSERT INTO $tablaDestino ($camposInsertSql) values ";
-			$arrayValues=[];
-			$acumValues=0;
+            $sqlInsert = "INSERT INTO $tablaDestino ($camposInsertSql) values ";
+            $arrayValues = [];
+            $acumValues = 0;
             foreach ($datos as $key => $value) {
                 $arrayValuesRow = [];
                 foreach ($value as $keyb => $valores) {
-                    if($keyb=='password'){
-                        $arrayValuesRow[$keyb] = "'" .password_hash($valores,1). "'";
-                    }elseif($keyb=='secure_key'){
+                    if ($keyb == 'password') {
+                        $arrayValuesRow[$keyb] = "'" . password_hash($valores, 1) . "'";
+                    } elseif ($keyb == 'secure_key') {
                         $arrayValuesRow[$keyb] = "'" . md5(uniqid(mt_rand(0, mt_getrandmax()), true)) . "'";
-                    }else{
+                    } else {
                         $arrayValuesRow[$keyb] = "'" . $this->eliminarNumeroCadena(trim($valores)) . "'";
                     }
-                    
+
                 }
                 $valueInsert = implode(',', $arrayValuesRow);
-				$arrayValues[$acumValues]= "($valueInsert)";
-				$acumValues++;
-			}			
-			
-			$valuesInsert=implode(',',$arrayValues);
+                $arrayValues[$acumValues] = "($valueInsert)";
+                $acumValues++;
+            }
 
-			$resp =[
-				'sqlDropTable'=>"DROP TABLE IF EXISTS $tablaDestino; ",
-				'sqlCreateTable'=>$sqlTabla,
-				'sqlInsert'=>$sqlInsert .= " $valuesInsert;"
-			]; 
-            return $resp; 
+            $valuesInsert = implode(',', $arrayValues);
+
+            $resp = [
+                'sqlDropTable' => "DROP TABLE IF EXISTS $tablaDestino; ",
+                'sqlCreateTable' => $sqlTabla,
+                'sqlInsert' => $sqlInsert .= " $valuesInsert;",
+            ];
+            return $resp;
         } else {
 
             Log::error("$this->cliente : error en la funcion " . __FUNCTION__ . " parametro datos vacío.");
@@ -190,12 +168,11 @@ class WebServiceSiesa
 
     }
 
-    public function getParametrosXml($parametrosSql=null)
+    public function getParametrosXml($parametrosSql = null)
     {
-        if(is_array($parametrosSql)){
-            $this->ConsultaSql=$this->reemplazarParametros($parametrosSql,$this->ConsultaSql);
+        if (is_array($parametrosSql)) {
+            $this->ConsultaSql = $this->reemplazarParametros($parametrosSql, $this->ConsultaSql);
         }
-
 
         $parm['pvstrxmlParametros'] = "<Consulta>
 												<NombreConexion>" . $this->conexion . "</NombreConexion>
@@ -217,27 +194,29 @@ class WebServiceSiesa
 
     public function eliminarNumeroCadena($cadena)
     {
-        // return preg_replace("'","",$cadena);
-        //  return preg_replace("/^[\w\d@ ]+$/i", '', $cadena);
-        return str_replace("'","",$cadena);
+        return str_replace("'", "", $cadena);
     }
 
-    public function reemplazarParametros($parametros,$consultaSql){
-        if(is_null($consultaSql)){
-            dd("El parametro consultasql es obligatoria. Por favor revise este campo en tabla conexion");
+    public function reemplazarParametros($parametros, $consultaSql)
+    {
+        if (is_null($consultaSql)) {
+            Log::error("El parametro consultasql es obligatoria. Por favor revise este campo en tabla conexion");
         }
-        
-        $nuevaConsultaSql=$consultaSql;
-        foreach ($parametros as $key => $parametro) {           
+
+        $nuevaConsultaSql = $consultaSql;
+        foreach ($parametros as $key => $parametro) {
 
             foreach ($parametro as $param => $valor) {
-                $nuevaConsultaSql=str_replace($param,$valor,$nuevaConsultaSql);
+                
+                // $nuevaConsultaSql = str_replace('**'.$param.'**',DB::connection()->getPdo()->quote($valor) , $nuevaConsultaSql);
+                $nuevaConsultaSql = str_replace('**'.$param.'**',$valor , $nuevaConsultaSql);
+
             }
-             
+
         }
 
-        // dump($nuevaConsultaSql);
-
+        Log::info("=============nueva consulta=====");
+        Log::info($nuevaConsultaSql);
         return $nuevaConsultaSql;
 
     }
@@ -245,6 +224,22 @@ class WebServiceSiesa
     public function getConexionesModel()
     {
         return new ConexionesModel();
+    }
+
+    public function convertirObjetosArrays($objetos)
+    {
+        $arrayValues = [];
+        $acumValues = 0;
+        foreach ($objetos as $key => $objeto) {
+            $arrayValuesRow = [];
+            foreach ($objeto as $keyb => $valores) {
+                $arrayValuesRow[(String) $keyb] = (String) $valores;
+            }
+            $arrayValues[$acumValues] = (array) $arrayValuesRow;
+            $acumValues++;
+        }
+
+        return $arrayValues;
     }
 
 }
