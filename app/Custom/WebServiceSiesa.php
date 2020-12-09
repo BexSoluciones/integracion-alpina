@@ -39,10 +39,10 @@ class WebServiceSiesa
 
     }
 
-    public function ejecutarConsulta($parametrosSql = null)
+    public function ejecutarConsulta($parametrosSql = null,$paginacion=false)
     {
         if (is_array($parametrosSql)) {
-            $parm = $this->getParametrosXml($parametrosSql);
+            $parm = $this->getParametrosXml($parametrosSql,$paginacion);
         } else {
             $parm = $this->getParametrosXml();
         }
@@ -74,6 +74,40 @@ class WebServiceSiesa
             $error = $e->getMessage();
             Log::info($error);
         }
+    }
+
+    public function ejecutarSql($sqlServer){
+
+        $parm=$this->getParamXml($sqlServer);
+
+        try
+        {
+            $client = new SoapClient($this->url, $parm);
+            $result = $client->EjecutarConsultaXML($parm); 
+            $schema = @simplexml_load_string($result->EjecutarConsultaXMLResult->schema);
+            $any    = @simplexml_load_string($result->EjecutarConsultaXMLResult->any);
+
+            if (@is_object($any->NewDataSet->Resultado)) {
+                
+                return $this->convertirObjetosArrays($any->NewDataSet->Resultado);
+            }
+
+            if (@$any->NewDataSet->Table) {
+                foreach ($any->NewDataSet->Table as $key => $value) {
+
+                    Log::info("\n");
+                    Log::info("\n " . $this->cliente . " Error Linea:\t " . $value->F_NRO_LINEA);
+                    Log::info("\n " . $this->cliente . " Error Value:\t " . $value->F_VALOR);
+                    Log::info("\n " . $this->cliente . " Error Desc:\t " . $value->F_DETALLE);
+
+                }
+            }
+
+        } catch (Exception $e) {
+            $error = $e->getMessage();
+            Log::info($error);
+        }
+
     }
 
     public function importarXml($xml)
@@ -168,11 +202,17 @@ class WebServiceSiesa
 
     }
 
-    public function getParametrosXml($parametrosSql = null)
+    public function getParametrosXml($parametrosSql = null,$paginacion=false)
     {
+
+        
         if (is_array($parametrosSql)) {
-            $this->ConsultaSql = $this->reemplazarParametros($parametrosSql, $this->ConsultaSql);
+            $this->ConsultaSql = $this->reemplazarParametros($parametrosSql, $this->ConsultaSql,$paginacion);
         }
+
+        
+
+        
 
         $parm['pvstrxmlParametros'] = "<Consulta>
 												<NombreConexion>" . $this->conexion . "</NombreConexion>
@@ -192,32 +232,74 @@ class WebServiceSiesa
         return $parm;
     }
 
+    public function getParamXml($consultaSql)
+    {
+
+        $parm['pvstrxmlParametros'] = "<Consulta>
+												<NombreConexion>" . $this->conexion . "</NombreConexion>
+												<IdCia>" . $this->idCia . "</IdCia>
+												<IdProveedor>" . $this->proveedor . "</IdProveedor>
+												<IdConsulta>SIESA</IdConsulta>
+												<Usuario>" . $this->usuario . "</Usuario>
+												<Clave>" . $this->clave . "</Clave>
+												<Parametros>
+													<Sql>" . $consultaSql. "</Sql>
+												</Parametros>
+											</Consulta>";
+
+        $parm['printTipoError'] = '1';
+        $parm['cache_wsdl'] = '0';
+
+        return $parm;
+    }
+
     public function eliminarNumeroCadena($cadena)
     {
         return str_replace("'", "", $cadena);
     }
 
-    public function reemplazarParametros($parametros, $consultaSql)
+    public function reemplazarParametros($parametros, $consultaSql,$paginacion=false)
     {
+        $seccionPaginacion="OFFSET **desde** ROWS FETCH NEXT **hasta** ROWS ONLY;";
+
         if (is_null($consultaSql)) {
             Log::error("El parametro consultasql es obligatoria. Por favor revise este campo en tabla conexion");
         }
 
         $nuevaConsultaSql = $consultaSql;
         foreach ($parametros as $key => $parametro) {
-
+            
             foreach ($parametro as $param => $valor) {
                 
                 // $nuevaConsultaSql = str_replace('**'.$param.'**',DB::connection()->getPdo()->quote($valor) , $nuevaConsultaSql);
                 $nuevaConsultaSql = str_replace('**'.$param.'**',$valor , $nuevaConsultaSql);
+                if($param=='desde' || $param=='hasta'){
+                    $seccionPaginacion = str_replace('**'.$param.'**',$valor , $seccionPaginacion);                    
+                }
 
             }
 
         }
 
+        if($paginacion){
+            $nuevaConsultaSql = str_replace('**paginacion**',$seccionPaginacion , $nuevaConsultaSql);
+        }else{
+            $nuevaConsultaSql = str_replace('**paginacion**','', $nuevaConsultaSql);
+        }
+        
+        
+        $nuevaConsultaSql="SET QUOTED_IDENTIFIER OFF; \n".$nuevaConsultaSql." \n SET QUOTED_IDENTIFIER ON;";
+
         Log::info("=============nueva consulta=====");
-        Log::info($nuevaConsultaSql);
+        Log::info($nuevaConsultaSql);        
+
         return $nuevaConsultaSql;
+
+    }
+
+    public function selectConteo($consultaSql){
+
+        $explodeConsultaSql=explode("ORDER");
 
     }
 
