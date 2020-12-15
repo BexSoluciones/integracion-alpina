@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Traits;
+use DateTime;
 
 trait TraitHerramientas
 {
@@ -107,14 +108,21 @@ trait TraitHerramientas
 
     public function getIpCliente()
     {
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) { 
-            $ip = $_SERVER['HTTP_CLIENT_IP']; 
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) { 
-            $ip = $_SERVER['HTTP_X_FORWARDED_FOR']; 
-        } else { 
-            $ip = $_SERVER['REMOTE_ADDR']; 
-        } 
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
 
         return $ip;
+    }
+
+    //fuente: https://www.php.net/manual/es/function.checkdate.php
+    public function validateDate($date, $format = 'Y-m-d')
+    {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) == $date;
     }
 }

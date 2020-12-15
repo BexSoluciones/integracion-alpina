@@ -10,15 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Log;
 
-$currentPath = Route::getFacadeRoot()->current()->uri();
-
 class CompraDevolucionCompraController extends Controller
 {
     use TraitHerramientas;
 
     public function getComprasDevolucionesCompra(Request $request)
     {
-
+        //---------valida filtros en caso de que existan
         $filtros = $request->input('filter');
         $erroresValidacionFiltro = $this->validarFiltros($filtros);
 
@@ -29,16 +27,15 @@ class CompraDevolucionCompraController extends Controller
             ], 412);
         }
 
-        $this->armarSqlCompraDevoCompra($filtros);
-
-        exit();
-        // $parametrosValidos=$this->validacionParametros();
-
+        //---------Se declaran variables y se valida si se pagina o no
         Log::info($request->all());
         $idConexion = 29; //id conexion get compras y devoluciones de compra
         $idConexionConteo = 31; //conteo get compras y devoluciones
         $pagina = $request->input('page') && is_numeric($request->input('page')) ? $request->input('page') : null;
         $rutaActual = Route::getFacadeRoot()->current()->uri();
+
+        //---------Armamos sql con filtros
+        $sqlCompraDevCompra = $this->armarSqlCompraDevoCompra($filtros);
 
         if (!is_null($pagina)) {
             $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 1000;
@@ -83,7 +80,7 @@ class CompraDevolucionCompraController extends Controller
         } else {
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
-            $datos = $objWebserviceSiesa->ejecutarConsulta([], false);
+            $datos = $objWebserviceSiesa->ejecutarSql($sqlCompraDevCompra);
 
             $respuesta = [
                 'code' => 200,
@@ -97,49 +94,63 @@ class CompraDevolucionCompraController extends Controller
 
     public function validarFiltros($param)
     {
-
-        $contador = 0;
         $errores = [];
-        foreach ($param as $key => $value) {
+        if (!empty($param)) {
 
-            $value = $this->protegerInyeccionSql($value);
+            $contador = 0;
 
-            switch ($key) {
-                case 'tipo_doc':
+            foreach ($param as $key => $value) {
 
-                    if ($this->noEmpty($value) === false || $this->validarTipoDoc($value) == false) {
-                        $errores['tipo_doc'] = 'El campo Tipo de Documento no valido, debe ser de tipo EMC o DP';
-                    }
+                $value = $this->protegerInyeccionSql($value);
 
-                    break;
-                case 'bodega':
+                switch ($key) {
+                    case 'tipo_doc':
 
-                    if ($this->noEmpty($value) === false || $this->validarBodega($value) === false) {
-                        $errores['bodega'] = 'El campo Bodega no es valido, esta vacio o no es un digito';
-                    }
+                        if ($this->noEmpty($value) === false || $this->validarTipoDoc($value) == false) {
+                            $errores['tipo_doc'] = 'El campo Tipo de Documento no valido, debe ser de tipo EMC o DP';
+                        }
 
-                    break;
-                case 'consec_doc':
+                        break;
+                    case 'bodega':
 
-                    if ($this->noEmpty($value) === false || $this->validarConsecDoc($value) == false) {
-                        $errores['consec_doc'] = 'El campo consec_doc no es valido, esta vacio o no es un digito';
-                    }
+                        if ($this->noEmpty($value) === false || $this->validarBodega($value) === false) {
+                            $errores['bodega'] = 'El campo Bodega no es valido, esta vacio o no es un digito';
+                        }
 
-                    break;
-                case 'fecha_doc':
+                        break;
+                    case 'consec_doc':
 
-                    // if ($this->noEmpty($value) === false || $this->validarTipoDoc($value) == false) {
-                    //     $errores['tipo_doc'] = 'Tipo de documento no valido, debe ser de tipo EMC o DP';
-                    // }
+                        if ($this->noEmpty($value) === false || $this->validarConsecDoc($value) == false) {
+                            $errores['consec_doc'] = 'El campo consec_doc no es valido, esta vacio o no es un digito';
+                        }
 
-                    break;
+                        break;
+                    case 'fecha_doc':
+
+                        if ($this->noEmpty($value) === false ) {
+                            $errores['fecha_doc'] = 'El campo fecha_doc esta vacio';
+                        }else{
+
+                            $resp= $this->validarFechaDocumento($value);
+
+                            if($resp['valid']===false){
+                                $errores['fecha_doc'] = $resp['message'];
+                            }
+
+                        }
+
+                        break;
+
+                }
 
             }
 
-        }
+            Log::info($errores);
+            return $errores;
 
-        Log::info($errores);
-        return $errores;
+        } else {
+            return $errores;
+        }
 
     }
 
@@ -170,6 +181,62 @@ class CompraDevolucionCompraController extends Controller
 
     public function validarFechaDocumento($param)
     {
+        Log::info("================entrando a funcion validar fecha documento ==========");
+        Log::info($param);
+        $valid=false;
+        $message='';
+        $param = trim($param);
+        $tieneSeparador = strpos($param, '|');
+        if ($tieneSeparador == true) {
+
+            $paramExplode = explode('|', $param);
+            Log::info("==== explode===");
+            Log::info($paramExplode);
+            $operador = $paramExplode[0];
+            if($this->validarOperador($operador)){
+                $fechaDesde   = $paramExplode[1];
+                $fechaHasta   = array_key_exists(2,$paramExplode)==true?$paramExplode[2]:null;    
+    
+                if ($this->validateDate($fechaDesde)){
+                    if(is_null($fechaHasta)){
+                        $valid=true;
+                        $message='';
+                    }else{
+                        if ($this->validateDate($fechaHasta)){
+                            $valid=true;
+                            $message='';
+                        }else{
+                            $valid=false;
+                            $message='El formato de la fecha hasta no es valido';
+                        }
+                    }
+                    
+                }else{
+                    $valid=false;
+                    $message='El formato de la fecha desde no es valido';
+                }
+
+            }else{
+                $valid=false;
+                $message='El operador logico utilizado en el campo fecha_doc no es valido ';
+            }
+           
+
+        } else {
+            if ($this->validateDate($param)){
+                $valid=true;
+                $message='';
+            }else{
+                $valid=false;
+                $message='El campo fecha_doc debe tener el formato Y-m-d';
+            }
+        }
+        
+
+        return [
+            'valid'=>$valid,
+            'message'=>$message
+        ];
 
     }
 
@@ -184,61 +251,80 @@ class CompraDevolucionCompraController extends Controller
 
     public function armarSqlCompraDevoCompra($filtros)
     {
+        $cadenaWhere = '';
+        if (!empty($filtros)) {
 
-        $where = [];
-        $contador = 0;
-        foreach ($filtros as $filtro => $value) {
+            $where = [];
+            $contador = 0;
+            foreach ($filtros as $filtro => $value) {
 
-            switch ($filtro) {
-                case 'tipo_doc':
+                $value = trim($value);
+                $operador='=';
 
-                    $where[$contador] = [$filtro, '=', $value];
-                    $contador++;
-                    break;
-                case 'bodega':
-
-                    $where[$contador] = [$filtro, '=', $value];
-                    $contador++;
-                    break;
-                case 'consec_doc':
-
-                    $where[$contador] = [$filtro, '=', $value];
-                    $contador++;
-                    break;
-                case 'fecha_doc':
-
-                    break;
-            }
-
-        }
-
-        Log::info($where);
-        $arrayCadenaWhere=[];
-        foreach ($where as $keya => $filtro) {
-
-            Log::info($filtro);
-
-            $filtroConcatenado='';
-            foreach ($filtro as $keyb => $value) {
-                if($keyb==2){
-                    $filtroConcatenado.='"'.$value.'"';
-                }else{
-                    $filtroConcatenado.=$value;
+                $tieneSeparador = strpos($value, '|');
+                if ($tieneSeparador == true) {        
+                    $paramExplode = explode('|', $param);                    
+                    $operador = $paramExplode[0];                      
+                    
                 }
                 
+                
+
+                
+                switch ($filtro) {
+                    case 'tipo_doc':
+
+                        $where[$contador] = [$filtro, $operador, $value];
+                        $contador++;
+                        break;
+                    case 'bodega':
+
+                        $where[$contador] = [$filtro, $operador, $value];
+                        $contador++;
+                        break;
+                    case 'consec_doc':
+
+                        $where[$contador] = [$filtro, $operador, $value];
+                        $contador++;
+                        break;
+                    case 'fecha_doc':
+                        $where[$contador] = [$filtro, $operador, $value];
+                        $contador++;
+                        break;
+                }
+
             }
 
-            $arrayCadenaWhere[$keya]= $filtroConcatenado;
-            
+            Log::info($where);
+            $arrayCadenaWhere = [];
+            foreach ($where as $keya => $filtro) {
+
+                Log::info($filtro);
+
+                $filtroConcatenado = '';
+                foreach ($filtro as $keyb => $value) {
+                    if ($keyb == 2) {
+                        $filtroConcatenado .= '"' . $value . '"';
+                    } else {
+                        $filtroConcatenado .= $value;
+                    }
+
+                }
+
+                $arrayCadenaWhere[$keya] = $filtroConcatenado;
+
+            }
+
+            $cadenaWhere = ' WHERE ' . implode(' and ', $arrayCadenaWhere);
+
+            Log::info('========mostrando cadena=========');
+            Log::info($cadenaWhere);
+
         }
 
-        $cadenaWhere=' WHERE '.implode(' and ',$arrayCadenaWhere);
-
-        Log::info('========mostrando cadena=========');
-        Log::info($cadenaWhere);
-
         $sql = '
-        SELECT * FROM 
+        SET QUOTED_IDENTIFIER OFF;
+        SELECT * FROM
         (SELECT
             t350_co_docto_contable.f350_id_cia as cia,
             t350_co_docto_contable.f350_id_co as centro_operacion,
@@ -271,9 +357,14 @@ class CompraDevolucionCompraController extends Controller
             INNER JOIN t200_mm_terceros ON (f350_rowid_tercero =  f200_rowid)
             INNER JOIN t202_mm_proveedores ON (f350_rowid_tercero = f202_rowid_tercero)
         WHERE (f350_id_tipo_docto = "EMC" OR f350_id_tipo_docto = "DP") AND t350_co_docto_contable.f350_fecha >= "2020-10-20"
-        ) AS a'.$cadenaWhere;
+        ) AS a' . $cadenaWhere . ';
+
+        SET QUOTED_IDENTIFIER ON;
+        ';
 
         Log::info($sql);
+
+        return $sql;
 
     }
 
@@ -284,6 +375,19 @@ class CompraDevolucionCompraController extends Controller
         $string = str_replace($listaNegra, '', $string);
         return $string;
 
+    }
+
+    public function validarOperador($operador)
+    {
+        Log::info("===========entrando a la ufncion validar operador=====");
+        Log::info("operador --> ".$operador);
+        $operadores = ['>', '<', '=', '>=','<=', '<>'];
+
+        $result = in_array($operador, $operadores);
+        if ($result) {
+            return true;
+        }
+        return false;
     }
 
     public function getWebServiceSiesa($idConexion)
