@@ -8,15 +8,18 @@ use Illuminate\Http\Request;
 use Validator;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Log;
 
 class AuthController extends Controller
 {
     /**
      * Registro de usuario
      */
+
+
     public function signUp(Request $request)
     {
-        Log::info('ingresando a signup');
+        // Log::info('ingresando a signup');
         $request->validate([
             'name' => 'required|string',
             'email' => 'required|string|email|unique:users',
@@ -30,7 +33,7 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Successfully created user!'
+            'message' => 'Usuario creado correctamente!'
         ], 201);
     }
 

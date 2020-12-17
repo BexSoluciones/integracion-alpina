@@ -30,9 +30,14 @@ class PedidoController extends Controller
         return new WebServiceSiesa($idConexion);
     }
 
-    public function subirPedidoSiesa(Request $request)
+    
+public function subirPedidoSiesa(Request $request)
     {
-        
+    
+//         $datos=$request->all();
+// //        Log::info("=========hola=======");
+//         Log::info($datos);
+// exit('hola');
 
         $respValidacion = $this->validarEstructuraJson($request);
 
@@ -342,7 +347,7 @@ class PedidoController extends Controller
 
         $rules = [
             'codigo_producto' => 'required|max:7',
-            'bodega' => 'required|numeric|size:5',
+            'bodega' => 'required|numeric|digits:5',
             'lista_precio' => 'required|size:3',
             'centro_operacion' => 'required|size:3',
             'cantidad' => 'required|digits_between:1,15',
