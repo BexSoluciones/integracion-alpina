@@ -6,6 +6,7 @@ use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
 use App\Traits\TraitHerramientas;
 use App\Models\ConexionesModel;
+use App\Models\BodegasTiposDocModel;
 use Illuminate\Http\Request;
 use Log;
 use Storage;
@@ -34,10 +35,7 @@ class PedidoController extends Controller
 public function subirPedidoSiesa(Request $request)
     {
     
-//         $datos=$request->all();
-// //        Log::info("=========hola=======");
-//         Log::info($datos);
-// exit('hola');
+
 
         $respValidacion = $this->validarEstructuraJson($request);
 
@@ -49,18 +47,15 @@ public function subirPedidoSiesa(Request $request)
                 'created' => false,
                 'code'=>412,
                 'errors' => $respValidacion['errors'],
-            ], 400);
+            ], 412);
 
-        }
-
-        
+        }       
 
         
 
             $pedido= $request->input('data')[0];
-            $detallesPedido = $request->input('data.0.detalle_pedido'); 
-            Log::info($pedido);
-            Log::info($detallesPedido);
+            $detallesPedido = $request->input('data.0.detalle_pedido');
+            
 
             if (count($detallesPedido) > 0) {
 
@@ -77,7 +72,7 @@ public function subirPedidoSiesa(Request $request)
                 $cadena .= '1'; //Indica si el numero consecutivo de docto es manual o automático
                 $cadena .= '1'; //Indicador de contacto
                 $cadena .= $pedido['centro_operacion_bodega']; //Centro de operación del documento
-                $cadena .= 'PEM'; //Tipo de documento
+                $cadena .= $this->remplazarTipoDocumento($pedido['tipo_documento']); //Tipo de documento
                 $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Numero documento
                 $cadena .= $pedido['fecha_pedido']; //Fecha del documento
                 $cadena .= '502'; //Clase interna del documento
@@ -126,10 +121,24 @@ public function subirPedidoSiesa(Request $request)
                 foreach ($detallesPedido as $key => $detallePedido) {
                     //---Declarando variables
                     $bodega = $detallePedido['bodega'];
+                    switch ($bodega) {
+
+                        case 'P01':
+                            $bodega = '00121';
+                            break;
+                        case '':
+                            if($this->noEmpty($value) === false){
+                                $errores[$bodega] = 'El campo Bodega no valido';
+                            }
+                            break;
+                    }
                     $listaPrecio = $detallePedido['lista_precio'];
                     $centroOperacion = $detallePedido['centro_operacion'];
 
                     //----armando cadena
+$datosBodeDoc=$this->remplazarTipoDocumento($pedido['tipo_documento']);
+$tipoDoc=$datosBodeDoc['tipo_doc'];
+$bodega=$datosBodeDoc['bodega'];
 
                     $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
                     $cadena .= '0431'; //Tipo registro
@@ -137,7 +146,7 @@ public function subirPedidoSiesa(Request $request)
                     $cadena .= '02'; //Version del tipo de registro
                     $cadena .= '001'; //compañia
                     $cadena .= $centroOperacion; //Centro de operacion
-                    $cadena .= 'PEM'; //Tipo de documento
+                    $cadena .= $tipoDocu; //Tipo de documento
                     $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Consecutivo de documento
                     $cadena .= str_pad($contadorDetallePedido, 10, "0", STR_PAD_LEFT); //Numero de registro --> hacer contador
                     $cadena .= str_pad($detallePedido['codigo_producto'], 7, "0", STR_PAD_LEFT); //Item
@@ -169,6 +178,7 @@ public function subirPedidoSiesa(Request $request)
                     $contador++;
                     $contadorDetallePedido++;
                 }
+                
                 $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT) . "99990001001";
 
                 $lineas = explode("\n", $cadena);
@@ -251,8 +261,14 @@ public function subirPedidoSiesa(Request $request)
     {
 
         //--------Valido que exista data
-        $formatoValido = true;
+        $formatoValido = false;
         $formatoValido = $request->input('data') ?? false;
+
+        // if(isset($formatoValido)){
+        //     return true;
+        // }else{
+        //     return false;
+        // }
         if (!$formatoValido) {
             return [
                 'valid' => false,
@@ -261,7 +277,7 @@ public function subirPedidoSiesa(Request $request)
         }
 
         //--------Valido que exista detalle pedido
-        $formatoValido = true;
+        $formatoValido = false;
         $formatoValido = $request->input('data.0.detalle_pedido') ?? false;
         if (!$formatoValido) {
             return [
@@ -315,8 +331,8 @@ public function subirPedidoSiesa(Request $request)
         $datosEncPedido = $this->decodificarArray($datosEncPedido);
 
         $rules = [
+            'tipo_documento' => 'required',
             'numero_pedido' => 'required|max:8',
-            'centro_operacion_bodega' => 'required|max:8',
             'tipo_cliente' => 'required|digits:4',
             'fecha_pedido' => 'required|date_format:"Ymd"',
             'nit_cliente' => 'required|digits_between:1,15',
@@ -325,15 +341,20 @@ public function subirPedidoSiesa(Request $request)
         ];
 
         $validator = Validator::make($datosEncPedido, $rules);
-        $errors=$validator->errors();
-        
-        
+        $tipoDocumentoValido=$this->validarTipoDocumento($datosEncPedido['tipo_documento']);
+
         if ($validator->fails()) {
             return [
                 'valid' => false,
                 'errors' => $validator->errors(),
             ];
-        } else {
+        }else if($tipoDocumentoValido['valid']===false){
+            return [
+                'valid' => false,
+                'errors' => $tipoDocumentoValido['errors'],
+            ];
+
+        }else{
             return [
                 'valid' => true,
                 'errors' => 0,
@@ -342,14 +363,13 @@ public function subirPedidoSiesa(Request $request)
 
     }
 
-    public function validarDetallePedido($datosDetallePedido)
+    public function validarDetallePedido($datosDetallePedido,$tipoDocu)
     {
 
         $rules = [
             'codigo_producto' => 'required|max:7',
-            'bodega' => 'required|numeric|digits:5',
+            'bodega' => 'required',
             'lista_precio' => 'required|size:3',
-            'centro_operacion' => 'required|size:3',
             'cantidad' => 'required|digits_between:1,15',
             'precio_producto' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
         ];
@@ -368,6 +388,15 @@ public function subirPedidoSiesa(Request $request)
             ];
         }
 
+    }
+
+    public function noEmpty($pedido)
+    {
+
+        if (empty($pedido)) {
+            return false;
+        }
+        return true;
     }
 
     public function getConexionesModel()
@@ -393,6 +422,70 @@ public function subirPedidoSiesa(Request $request)
 
     }
 
+    public function validarTipoDocumento($tipoDoc,$bodega){
+
+                 
+        $objBodegaTipoDo= new BodegasTiposDocModel();
+        $resp=$objBodegaTipoDo->validarTipoDocumento($tipoDoc,$bodega);  
+        
+        if($resp===true){
+                    return [
+                        'valid' => true,
+                        'errors' => 0,
+                    ];
+        }else{
+                    return [
+                        'valid' => false,
+                        'errors' => 'El tipo de documento '.$tipoDoc.' y la bodega '.$bodega.' no pertenece a un documento valido',
+                    ]; 
+        }
+    }
+
+    // $tipoDoc=strtoupper($tipoDoc);
+    //     $tiposDocumentosValidos = ['EC1', 'EC2', 'EC3', 'EC4','EC5'];
+
+    //     $result = in_array($tipoDoc, $tiposDocumentosValidos);
+    //     if ($result) {
+    //         return [
+    //             'valid' => true,
+    //             'errors' => 0,
+    //         ];
+            
+    //     }
+    //     return [
+    //         'valid' => false,
+    //         'errors' => 'Tipo de documento no valido, debe ser : EC1, EC2, EC3, EC4,EC5',
+    //     ]; 
+
+    public function remplazarTipoDocumento($tipoDoc, $bodega){
+
+        $nuevoTipoDoc="";
+        $nuevaBodega="";
+            switch ($tipoDoc) {
+                case 'EC1':
+                    $nuevoTipoDoc['tipo_docu'] = 'PUM';
+                    $nuevoTipoDoc['bodega'] = 'PUM';
+                    break;
+                case 'EC2': 
+                    $nuevoTipoDoc = 'PUD';
+                    break;
+                case 'EC3':
+                    $nuevoTipoDoc = 'PUZ';
+                    break;
+                case 'EC4':
+                    $nuevoTipoDoc = 'PUC';
+                    break;
+                case 'EC5':
+                    $nuevoTipoDoc = 'PUA';
+                    break;
+                
+            }
+
+            return $nuevoTipoDoc;
+            
+    }
+
+  
     
 
     
@@ -403,7 +496,6 @@ public function subirPedidoSiesa(Request $request)
 //     "data":[
 //         {
 //             "numero_pedido": "PEC80001",
-//             "centro_operacion_bodega":"001",
 //             "tipo_cliente":"0001",
 //             "fecha_pedido":"20201101",
 //             "nit_cliente":"5415454",
@@ -414,7 +506,6 @@ public function subirPedidoSiesa(Request $request)
 //                         "codigo_producto": "6039",
 //                         "bodega":"00128",
 //                         "lista_precio":"ECOM",
-//                         "centro_operacion":"001",
 //                         "numero_pedido": "PEC80001",
 //                         "cantidad":10,
 //                         "precio_producto": 2550
@@ -423,7 +514,6 @@ public function subirPedidoSiesa(Request $request)
 //                         "codigo_producto": "6040",
 //                         "bodega":"00128",
 //                         "lista_precio":"ECOM",
-//                         "centro_operacion":"001",
 //                         "numero_pedido": "PEC80001",
 //                         "cantidad":30,
 //                         "precio_producto": 4800
