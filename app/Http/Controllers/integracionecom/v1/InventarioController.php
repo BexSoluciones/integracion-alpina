@@ -46,24 +46,21 @@ class InventarioController extends Controller
 
 
         if (!is_null($pagina)) {
-            $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 1000;
+            $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 5;
             $desde = (((int) ($pagina) - 1) * (int) ($filasXpagina));
             $hasta = (int) ($filasXpagina);
             $anterior = $pagina > 2 ? $pagina - 1 : 1;
             $siguiente = $pagina + 1;
 
-            $parametros = [
-                ['desde' => $desde],
-                ['hasta' => $hasta],
-            ];
+           
 
-            Log::info($parametros);
+            
 
             $objConteo = $this->getWebServiceSiesa($idConexionConteo);
-            $datosConteo = $objConteo->ejecutarConsulta($parametros, false);
+            $datosConteo = $objConteo->ejecutarSql($sqlInventario['conteoSqlPrincipal']);
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
-            $datos = $objWebserviceSiesa->ejecutarConsulta($parametros, true);
+            $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
             Log::info("============datos conteo===========");
             Log::info($datosConteo);
@@ -88,7 +85,7 @@ class InventarioController extends Controller
         } else {
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
-            $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario);
+            $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
             $respuesta = [
                 'code' => 200,
@@ -329,10 +326,7 @@ class InventarioController extends Controller
             Log::info($cadenaWhere);
 
         }
-
-        $sql = '
-        SET QUOTED_IDENTIFIER OFF;
-        SELECT * FROM
+        $sqlPrincipal=' SELECT * FROM
         (
 
             SELECT 
@@ -384,16 +378,38 @@ class InventarioController extends Controller
             --AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
             AND t350_co_docto_contable.f350_fecha >= "2021-01-06" -- AND f124_referencia LIKE "UNI%"
 
-        ) AS a' . $cadenaWhere . ';
+        ) AS a' . $cadenaWhere . ';';
+        $sqlPrincipal=$this->aplicarIdentificardor($sqlPrincipal); 
+        $conteoSqlPrincipal=$this->conteoSqlPrincipal($sqlPrincipal);   
 
-        SET QUOTED_IDENTIFIER ON;
-        ';
+        Log::info($sqlPrincipal);
+        Log::info($conteoSqlPrincipal);
 
-        Log::info($sql);
-
-        return $sql;
+        return [
+            'sqlPrincipal'=>$sqlPrincipal,
+            'conteoSqlPrincipal'=>$conteoSqlPrincipal
+        ];
 
     }
+
+    public function aplicarIdentificardor($sql){
+
+        $newSql="SET QUOTED_IDENTIFIER OFF; \n";
+        $newSql.=$sql;
+        $newSql.= "\n SET QUOTED_IDENTIFIER ON;";
+
+        return $newSql;
+    }
+
+    public function conteoSqlPrincipal($sql){
+
+        $newSql='select count(*) as conteo from (';
+        $newSql.=$sql;
+        $newSql.= ') as b ';
+
+        return $this->aplicarIdentificardor($newSql);
+    }
+    
 
     public function protegerInyeccionSql($string)
     {

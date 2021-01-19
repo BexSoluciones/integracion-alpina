@@ -157,7 +157,7 @@ class CompraDevolucionCompraController extends Controller
     public function validarTipoDoc($param)
     {
 
-        if ($param == 'EMC' || $param == 'DP') {
+        if ($param == 'EN' || $param == 'SA') {
             return true;
         }
         return false;
@@ -325,38 +325,55 @@ class CompraDevolucionCompraController extends Controller
         $sql = '
         SET QUOTED_IDENTIFIER OFF;
         SELECT * FROM
-        (SELECT
-            t350_co_docto_contable.f350_id_cia as cia,
-            t350_co_docto_contable.f350_id_co as centro_operacion,
-            t350_co_docto_contable.f350_id_tipo_docto as tipo_doc,
-            t350_co_docto_contable.f350_consec_docto as consec_doc,
-            t350_co_docto_contable.f350_fecha as fecha_doc,
-            t350_co_docto_contable.f350_id_periodo as periodo_poc,
-            t350_co_docto_contable.f350_rowid_tercero AS tercero,
-            t200_mm_terceros.f200_nit as nit,
-            t200_mm_terceros.F200_razon_social as razon_social,
-            t202_mm_proveedores.f202_id_sucursal as sucursal_terc,
-            t350_co_docto_contable.f350_total_base_gravable as valor_base_gravable,
-            t350_co_docto_contable.f350_notas as observacion,
-            t470_cm_movto_invent.f470_rowid_item_ext as item,
-            t470_cm_movto_invent.f470_rowid_bodega as bodega,
-            t470_cm_movto_invent.f470_ind_impuesto_precio_venta as impuesto,
-            t470_cm_movto_invent.f470_id_unidad_medida as unid_medida,
-            t470_cm_movto_invent.f470_cant_1 as cantidad,
-            t470_cm_movto_invent.f470_costo_prom_uni as costo_prom_unit,
-            t470_cm_movto_invent.f470_costo_prom_tot as costo_prom_total,
-            t470_cm_movto_invent.f470_precio_uni as precio_unit,
-            t470_cm_movto_invent.f470_vlr_bruto valor_bruto,
-            t470_cm_movto_invent.f470_vlr_imp as valor_impuesto,
-            t470_cm_movto_invent.f470_vlr_neto as valor_neto,
-            t470_cm_movto_invent.f470_desc_variable as descuento,
-            t470_cm_movto_invent.f470_id_causal_devol as causal_devolucion,
-            t470_cm_movto_invent.f470_rowid_docto as id_movimiento
-        FROM t350_co_docto_contable INNER JOIN t470_cm_movto_invent
-            ON (f350_id_cia = f470_id_cia AND f350_rowid = f470_rowid_docto)
-            INNER JOIN t200_mm_terceros ON (f350_rowid_tercero =  f200_rowid)
-            INNER JOIN t202_mm_proveedores ON (f350_rowid_tercero = f202_rowid_tercero)
-        WHERE (f350_id_tipo_docto = "EMC" OR f350_id_tipo_docto = "DP") AND t350_co_docto_contable.f350_fecha >= "2020-10-20"
+        (SELECT 
+		t350_co_docto_contable.f350_id_cia as cia, 
+		t350_co_docto_contable.f350_id_co as centro_operacion, 
+		CASE t350_co_docto_contable.f350_id_tipo_docto 
+			WHEN "EMC" THEN "EN"
+			WHEN "DP" THEN "SA"
+			ELSE f350_id_tipo_docto
+		END as tipo_doc, 
+		t350_co_docto_contable.f350_consec_docto as consec_doc, 
+		t350_co_docto_contable.f350_fecha as fecha_doc, 
+		t350_co_docto_contable.f350_id_periodo as periodo_doc,
+		t200_mm_terceros.f200_nit as nit,
+		t200_mm_terceros.F200_razon_social as razon_social, 
+		t202_mm_proveedores.f202_id_sucursal as sucursal_terc, 
+		t350_co_docto_contable.f350_total_base_gravable as valor_base_gravable, 
+		t350_co_docto_contable.f350_notas as observacion,
+		substring(t124_mc_items_referencias.f124_referencia,4,15) as Item, 
+		CASE t150_mc_bodegas.f150_id 
+                WHEN "00111" THEN "P01"
+                WHEN "00121" THEN "P01"
+                WHEN "00124" THEN "P01"
+                WHEN "00208" THEN "P01"
+                WHEN "00408" THEN "P01"
+                WHEN "00508" THEN "P01"
+                ELSE f150_id
+            END as Bodega,
+		t470_cm_movto_invent.f470_ind_impuesto_precio_venta as impuesto,
+		t470_cm_movto_invent.f470_id_unidad_medida as unid_medida, 
+		t470_cm_movto_invent.f470_cant_1 as cantidad, 
+		t470_cm_movto_invent.f470_costo_prom_uni as costo_prom_unit,
+		t470_cm_movto_invent.f470_costo_prom_tot as costo_prom_total,
+		t470_cm_movto_invent.f470_precio_uni as precio_unit, 
+		t470_cm_movto_invent.f470_vlr_bruto valor_bruto, 
+		t470_cm_movto_invent.f470_vlr_imp as valor_impuesto, 
+		t470_cm_movto_invent.f470_vlr_neto as valor_neto, 
+		t470_cm_movto_invent.f470_desc_variable as descuento,
+		t470_cm_movto_invent.f470_id_causal_devol as causal_devolucion,
+		t470_cm_movto_invent.f470_rowid_docto as id_movimiento
+	FROM t350_co_docto_contable INNER JOIN t470_cm_movto_invent 
+		ON (f350_id_cia = f470_id_cia AND f350_rowid = f470_rowid_docto) 
+		INNER JOIN t200_mm_terceros ON (f350_rowid_tercero =  f200_rowid) 
+		INNER JOIN t202_mm_proveedores ON (f350_rowid_tercero = f202_rowid_tercero)
+		INNER JOIN t150_mc_bodegas on (f470_rowid_bodega = f150_rowid)
+		INNER JOIN t121_mc_items_extensiones ON (f470_rowid_item_ext = f121_rowid)
+		INNER JOIN t120_mc_items on (f121_rowid_item = f120_rowid)
+		INNER JOIN t124_mc_items_referencias on (f121_rowid_item = f124_rowid_item)
+	WHERE (f350_id_tipo_docto = "EMC" OR f350_id_tipo_docto = "DP") AND t350_co_docto_contable.f350_fecha >= "2021-01-07"
+	 	--AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
+		--AND f124_referencia LIKE "UNI%"
         ) AS a' . $cadenaWhere . ';
 
         SET QUOTED_IDENTIFIER ON;
