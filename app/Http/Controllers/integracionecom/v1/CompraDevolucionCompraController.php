@@ -107,7 +107,7 @@ class CompraDevolucionCompraController extends Controller
                     case 'tipo_doc':
 
                         if ($this->noEmpty($value) === false || $this->validarTipoDoc($value) == false) {
-                            $errores['tipo_doc'] = 'El campo Tipo de Documento no valido, debe ser de tipo EMC o DP';
+                            $errores['tipo_doc'] = 'El campo Tipo de Documento no valido, debe ser de tipo EN o SA';
                         }
 
                         break;
@@ -157,9 +157,12 @@ class CompraDevolucionCompraController extends Controller
     public function validarTipoDoc($param)
     {
 
+        Log::info('PARAMETRO=>'.$param);
         if ($param == 'EN' || $param == 'SA') {
+            Log::info('Es valido');
             return true;
         }
+        Log::info('NO Es valido');
         return false;
     }
 
@@ -387,7 +390,7 @@ class CompraDevolucionCompraController extends Controller
 
     public function protegerInyeccionSql($string)
     {
-
+        
         $listaNegra = ['drop', 'select', 'delete', 'truncate', 'insert', 'update', 'create'];
         $string = str_replace($listaNegra, '', $string);
         return $string;
