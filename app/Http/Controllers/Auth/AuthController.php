@@ -42,11 +42,21 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
+        
+        $rules=[
             'email' => 'required|string|email',
             'password' => 'required|string',
             'remember_me' => 'boolean'
-        ]);
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors(),
+            ];
+        }
+        
 
         $credentials = request(['email', 'password']);
 
