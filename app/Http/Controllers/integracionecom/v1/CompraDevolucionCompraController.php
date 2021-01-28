@@ -327,7 +327,7 @@ class CompraDevolucionCompraController extends Controller
 
         $sql = '
         SET QUOTED_IDENTIFIER OFF;
-        SELECT * FROM
+        SELECT top 5 * FROM
         (SELECT 
 		t350_co_docto_contable.f350_id_cia as cia, 
 		t350_co_docto_contable.f350_id_co as centro_operacion, 
@@ -391,7 +391,7 @@ class CompraDevolucionCompraController extends Controller
     public function protegerInyeccionSql($string)
     {
         
-        $listaNegra = ['drop', 'select', 'delete', 'truncate', 'insert', 'update', 'create'];
+        $listaNegra = ['drop', 'select', 'delete', 'truncate', 'insert', 'update', 'create','DROP', 'SELECT', 'DELETE', 'TRUNCATE', 'INSERT', 'update', 'create'];
         $string = str_replace($listaNegra, '', $string);
         return $string;
 
