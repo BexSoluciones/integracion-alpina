@@ -338,15 +338,15 @@ class InventarioController extends Controller
                 WHEN "TMP" THEN "SA"
                 ELSE f350_id_tipo_docto
             END as tipo_doc,
-            t350_co_docto_contable.f350_consec_docto as consec_Doc, 
-            t350_co_docto_contable.f350_fecha as Fecha_Doc, 
-            t350_co_docto_contable.f350_id_periodo as Periodo_Doc, 
-            t200_mm_terceros.f200_nit as NIT,
-            t200_mm_terceros.F200_razon_social as Razon_Social, 
-            t202_mm_proveedores.f202_id_sucursal as Sucursal_Terc, 
-            t350_co_docto_contable.f350_notas as Observacion,
-            t350_co_docto_contable.f350_total_db2 as Valor_Documento,
-            substring(t124_mc_items_referencias.f124_referencia,4,15) as Item,
+            t350_co_docto_contable.f350_consec_docto as consec_doc, 
+            t350_co_docto_contable.f350_fecha as fecha_doc, 
+            t350_co_docto_contable.f350_id_periodo as periodo_doc, 
+            t200_mm_terceros.f200_nit as nit,
+            t200_mm_terceros.F200_razon_social as razon_social, 
+            t202_mm_proveedores.f202_id_sucursal as sucursal_terc, 
+            t350_co_docto_contable.f350_notas as observacion,
+            t350_co_docto_contable.f350_total_db2 as valor_documento,
+            substring(t124_mc_items_referencias.f124_referencia,4,15) as item,
             CASE t150_mc_bodegas.f150_id 
                  WHEN "00111" THEN "P01"
                 WHEN "00121" THEN "P01"
@@ -355,7 +355,7 @@ class InventarioController extends Controller
                 WHEN "00408" THEN "P01"
                 WHEN "00508" THEN "P01"
                 ELSE f150_id
-            END as Bodega,
+            END as bodega,
             t470_cm_movto_invent.f470_id_unidad_medida as unid_medida,
             t470_cm_movto_invent.f470_cant_1 as cantidad,
             t470_cm_movto_invent.f470_costo_prom_uni as costo_prom_unit,
