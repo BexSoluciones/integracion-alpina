@@ -35,35 +35,29 @@ class InventarioController extends Controller
         $idConexion = 32; //id conexion get inventario
         $idConexionConteo = 32; //conteo get inventario
         $pagina = $request->input('page') && is_numeric($request->input('page')) ? $request->input('page') : null;
+        // $paginar = !is_null($pagina) ? true : false;
         $rutaActual = Route::getFacadeRoot()->current()->uri();
-        //Log::info($rutaActual);
-        //dd("termino");
-        
-        //---------Armamos sql con filtros
-        $sqlInventario = $this->armarSqlInventario($filtros);
-        //Log::info($sqlInventario);
-
-
 
         if (!is_null($pagina)) {
-            $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 5;
+            $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 1000;
             $desde = (((int) ($pagina) - 1) * (int) ($filasXpagina));
             $hasta = (int) ($filasXpagina);
             $anterior = $pagina > 2 ? $pagina - 1 : 1;
             $siguiente = $pagina + 1;
 
-           
-
+            $paramPaginacion = [
+                ['desde' => $desde],
+                ['hasta' => $hasta]
+            ];    
             
+            //---------Armamos sql con filtros
+            $sqlInventario = $this->armarSqlInventario($filtros,true,$paramPaginacion);  
 
             $objConteo = $this->getWebServiceSiesa($idConexionConteo);
             $datosConteo = $objConteo->ejecutarSql($sqlInventario['conteoSqlPrincipal']);
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
-
-            Log::info("============datos conteo===========");
-            Log::info($datosConteo);
 
             $totalRegistros = $datosConteo[0]['conteo'];
             $totalPaginas = ceil($totalRegistros / $filasXpagina);
@@ -254,7 +248,7 @@ class InventarioController extends Controller
         return true;
     }
 
-    public function armarSqlInventario($filtros)
+    public function armarSqlInventario($filtros,$paginar,$paramPaginacion)
     {
         $cadenaWhere = '';
         if (!empty($filtros)) {
@@ -326,7 +320,7 @@ class InventarioController extends Controller
             Log::info($cadenaWhere);
 
         }
-        $sqlPrincipal=' SELECT * FROM
+        $sqlPrincipal='SELECT * FROM
         (
 
             SELECT 
@@ -378,21 +372,67 @@ class InventarioController extends Controller
             --AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
             AND t350_co_docto_contable.f350_fecha >= "2021-01-06" -- AND f124_referencia LIKE "UNI%"
 
-        ) AS a' . $cadenaWhere . ';';
-        $sqlPrincipal=$this->aplicarIdentificardor($sqlPrincipal); 
-        $conteoSqlPrincipal=$this->conteoSqlPrincipal($sqlPrincipal);   
+        ) AS a' . $cadenaWhere ;
+
+        $sqlPrincipalConteo = $sqlPrincipal;
+        if($paginar){
+            Log::info("========aca entreaaaa========");
+            $sqlPrincipal=$sqlPrincipal.' **paginacion** ';
+            Log::info("========sql con **paginacion**========");
+            Log::info($sqlPrincipal);
+            $sqlPrincipal=$this->reemplazarParametros($paramPaginacion, $sqlPrincipal);
+            Log::info("=======sql con paginacion====");
+            Log::info($sqlPrincipal);
+        }
+        
+        $conteoSqlPrincipal=$this->conteoSqlPrincipal($sqlPrincipalConteo);   
 
         Log::info($sqlPrincipal);
         Log::info($conteoSqlPrincipal);
 
         return [
-            'sqlPrincipal'=>$sqlPrincipal,
+            'sqlPrincipal'=>$this->aplicarIdentificador($sqlPrincipal),
             'conteoSqlPrincipal'=>$conteoSqlPrincipal
         ];
 
     }
 
-    public function aplicarIdentificardor($sql){
+    public function reemplazarParametros($paramPaginacion, $consultaSql)
+    {
+        $seccionPaginacion="ORDER BY (SELECT NULL) OFFSET **desde** ROWS FETCH NEXT **hasta** ROWS ONLY";
+
+        if (is_null($consultaSql)) {
+            Log::error("El parametro consultasql es obligatoria. Por favor revise este campo en tabla conexion");
+        }
+
+        $nuevaConsultaSql = $consultaSql;
+        foreach ($paramPaginacion as $key => $parametro) {
+            
+            foreach ($parametro as $param => $valor) {
+                
+                $nuevaConsultaSql = str_replace('**'.$param.'**',$valor , $nuevaConsultaSql);
+                if($param=='desde' || $param=='hasta'){
+                    $seccionPaginacion = str_replace('**'.$param.'**',$valor , $seccionPaginacion);                    
+                }
+
+            }
+
+        }
+
+        
+        $nuevaConsultaSql = str_replace('**paginacion**',$seccionPaginacion , $nuevaConsultaSql);
+        
+        
+        // $nuevaConsultaSql="SET QUOTED_IDENTIFIER OFF; \n".$nuevaConsultaSql." \n SET QUOTED_IDENTIFIER ON;";
+
+        Log::info("=============nueva consulta=====");
+        Log::info($nuevaConsultaSql);        
+
+        return $nuevaConsultaSql;
+
+    }
+
+    public function aplicarIdentificador($sql){
 
         $newSql="SET QUOTED_IDENTIFIER OFF; \n";
         $newSql.=$sql;
@@ -407,7 +447,7 @@ class InventarioController extends Controller
         $newSql.=$sql;
         $newSql.= ') as b ';
 
-        return $this->aplicarIdentificardor($newSql);
+        return $this->aplicarIdentificador($newSql);
     }
     
 
