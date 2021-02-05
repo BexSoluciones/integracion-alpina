@@ -324,53 +324,53 @@ class InventarioController extends Controller
         (
 
             SELECT 
-            t350_co_docto_contable.f350_id_cia as cia, 
-            t350_co_docto_contable.f350_id_co as centro_operacion, 
-            CASE t350_co_docto_contable.f350_id_tipo_docto
-                WHEN "EM" THEN "EN"
-                WHEN "TTE" THEN "SA"
-                WHEN "TTS" THEN "SA"
-                WHEN "SM" THEN "SA"
-                WHEN "AIF" THEN "SA"
-                WHEN "TM" THEN "SA"
-                WHEN "TMC" THEN "SA"
-                WHEN "PM" THEN "SA"
-                WHEN "TMP" THEN "SA"
-                ELSE f350_id_tipo_docto
-            END as tipo_doc,
-            t350_co_docto_contable.f350_consec_docto as consec_doc, 
-            t350_co_docto_contable.f350_fecha as fecha_doc, 
-            t350_co_docto_contable.f350_id_periodo as periodo_doc, 
-            t200_mm_terceros.f200_nit as nit,
-            t200_mm_terceros.F200_razon_social as razon_social, 
-            t202_mm_proveedores.f202_id_sucursal as sucursal_terc, 
-            t350_co_docto_contable.f350_notas as observacion,
-            t350_co_docto_contable.f350_total_db2 as valor_documento,
-            substring(t124_mc_items_referencias.f124_referencia,4,15) as item,
-            CASE t150_mc_bodegas.f150_id 
-                 WHEN "00111" THEN "P01"
-                WHEN "00121" THEN "P01"
-                WHEN "00124" THEN "P01"
-                WHEN "00208" THEN "P01"
-                WHEN "00408" THEN "P01"
-                WHEN "00508" THEN "P01"
-                ELSE f150_id
-            END as bodega,
-            t470_cm_movto_invent.f470_id_unidad_medida as unid_medida,
-            t470_cm_movto_invent.f470_cant_1 as cantidad,
-            t470_cm_movto_invent.f470_costo_prom_uni as costo_prom_unit,
-            t470_cm_movto_invent.f470_costo_prom_tot as costo_prom_total
-        FROM t350_co_docto_contable INNER JOIN t470_cm_movto_invent 
-            ON (f350_id_cia = f470_id_cia AND f350_rowid = f470_rowid_docto)
-            LEFT JOIN t200_mm_terceros ON (f350_rowid_tercero =  f200_rowid) 
-            LEFT JOIN t202_mm_proveedores ON (f350_rowid_tercero = f202_rowid_tercero)
-            INNER JOIN t150_mc_bodegas ON (f470_rowid_bodega = f150_rowid)
-            INNER JOIN t121_mc_items_extensiones ON (f470_rowid_item_ext = f121_rowid)
-            INNER JOIN t120_mc_items on (f121_rowid_item = f120_rowid)
-            INNER JOIN t124_mc_items_referencias on (f121_rowid_item = f124_rowid_item)
-        WHERE (f350_id_tipo_docto = "EM" OR f350_id_tipo_docto = "TTE" OR f350_id_tipo_docto = "TTS" OR f350_id_tipo_docto = "SM" OR f350_id_tipo_docto = "AIF" OR f350_id_tipo_docto = "TM" OR f350_id_tipo_docto = "TMC" OR f350_id_tipo_docto = "PM" OR f350_id_tipo_docto = "TMP")
-            --AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
-            AND t350_co_docto_contable.f350_fecha >= "2021-01-06" -- AND f124_referencia LIKE "UNI%"
+		t350_co_docto_contable.f350_id_cia as cia, 
+		t350_co_docto_contable.f350_id_co as centro_operacion, 
+		CASE t350_co_docto_contable.f350_id_tipo_docto
+			WHEN "EM" THEN "EN"
+			WHEN "TTE" THEN "SA"
+			WHEN "TTS" THEN "SA"
+			WHEN "SM" THEN "SA"
+			WHEN "AIF" THEN "SA"
+			WHEN "TM" THEN "SA"
+			WHEN "TMC" THEN "SA"
+			WHEN "PM" THEN "SA"
+			WHEN "TMP" THEN "SA"
+			ELSE f350_id_tipo_docto
+		END as tipo_doc,
+		t350_co_docto_contable.f350_consec_docto as consec_Doc, 
+		t350_co_docto_contable.f350_fecha as fecha_Doc, 
+		t350_co_docto_contable.f350_id_periodo as periodo_Doc, 
+		t200_mm_terceros.f200_nit as nit,
+		t200_mm_terceros.F200_razon_social as razon_social, 
+		t202_mm_proveedores.f202_id_sucursal as sucursal_terc, 
+		t350_co_docto_contable.f350_notas as observacion,
+		t350_co_docto_contable.f350_total_db2 as valor_documento,
+		substring(t124_mc_items_referencias.f124_referencia,4,15) as item,
+		CASE t150_mc_bodegas.f150_id 
+		 	WHEN "00111" THEN "P01" -- UNILEVER MAYORISTA
+			WHEN "00121" THEN "P01" -- UNILEVER MEDELLIN
+			WHEN "00124" THEN "P01" -- UNILEVER DIRECTOS
+			WHEN "00208" THEN "P01" -- UNILEVER PEREIRA
+			WHEN "00408" THEN "P01" -- UNILEVER CAUCASIA
+			WHEN "00508" THEN "P01" -- UNILEVER MANIZALES
+			ELSE f150_id
+		END as bodega,
+		t470_cm_movto_invent.f470_id_unidad_medida as unid_medida,
+		t470_cm_movto_invent.f470_cant_1 as cantidad,
+		t470_cm_movto_invent.f470_costo_prom_uni as costo_prom_unit,
+		t470_cm_movto_invent.f470_costo_prom_tot as costo_prom_total
+	FROM t350_co_docto_contable INNER JOIN t470_cm_movto_invent 
+		ON (f350_id_cia = f470_id_cia AND f350_rowid = f470_rowid_docto)
+		LEFT JOIN t200_mm_terceros ON (f350_rowid_tercero =  f200_rowid) 
+		LEFT JOIN t202_mm_proveedores ON (f350_rowid_tercero = f202_rowid_tercero)
+		INNER JOIN t150_mc_bodegas ON (f470_rowid_bodega = f150_rowid)
+		INNER JOIN t121_mc_items_extensiones ON (f470_rowid_item_ext = f121_rowid)
+		INNER JOIN t120_mc_items on (f121_rowid_item = f120_rowid)
+		INNER JOIN t124_mc_items_referencias on (f121_rowid_item = f124_rowid_item)
+	WHERE (f350_id_tipo_docto = "EM" OR f350_id_tipo_docto = "TTE" OR f350_id_tipo_docto = "TTS" OR f350_id_tipo_docto = "SM" OR f350_id_tipo_docto = "AIF" OR f350_id_tipo_docto = "TM" OR f350_id_tipo_docto = "TMC" OR f350_id_tipo_docto = "PM" OR f350_id_tipo_docto = "TMP")
+		AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
+		AND t350_co_docto_contable.f350_fecha &gt;= "2021-01-25" AND f124_referencia LIKE "UNI%"
 
         ) AS a' . $cadenaWhere ;
 

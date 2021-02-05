@@ -19,12 +19,19 @@ class AuthController extends Controller
 
     public function signUp(Request $request)
     {
-        // Log::info('ingresando a signup');
-        $request->validate([
+        $rules=[
             'name' => 'required|string',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string'
-        ]);
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors(),
+            ];
+        }
 
         User::create([
             'name' => $request->name,
