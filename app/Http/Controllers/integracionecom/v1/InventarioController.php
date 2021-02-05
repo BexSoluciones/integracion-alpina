@@ -87,6 +87,7 @@ class InventarioController extends Controller
 
         } else {
 
+            $sqlInventario = $this->armarSqlInventario($filtros,false,$paramPaginacion=[]); 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
