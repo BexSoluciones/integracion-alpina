@@ -4,22 +4,22 @@ namespace App\Http\Controllers\integracionecom\v1;
 
 use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
-use App\Traits\TraitHerramientas;
 use App\Models\ConexionesModel;
+use App\Traits\TraitHerramientas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Log;
 
 class InventarioController extends Controller
 {
-    
+
     use TraitHerramientas;
 
-    const ID_CONEXION=32;
+    const ID_CONEXION = 32;
 
-    
-    public function __construct(){
-        $this->datosConexion=$this->getConexionesModel()->getConexionXid(self::ID_CONEXION);
+    public function __construct()
+    {
+        $this->datosConexion = $this->getConexionesModel()->getConexionXid(self::ID_CONEXION);
         Log::info("=========datos conexion inventario=====");
         Log::info($this->datosConexion);
     }
@@ -36,8 +36,6 @@ class InventarioController extends Controller
                 'errors' => $erroresValidacionFiltro,
             ], 412);
         }
-
-       
 
         //---------Se declaran variables y se valida si se pagina o no
         Log::info($request->all());
@@ -56,11 +54,11 @@ class InventarioController extends Controller
 
             $paramPaginacion = [
                 ['desde' => $desde],
-                ['hasta' => $hasta]
-            ];    
-            
+                ['hasta' => $hasta],
+            ];
+
             //---------Armamos sql con filtros
-            $sqlInventario = $this->armarSqlInventario($filtros,true,$paramPaginacion);  
+            $sqlInventario = $this->armarSqlInventario($filtros, true, $paramPaginacion);
 
             $objConteo = $this->getWebServiceSiesa($idConexionConteo);
             $datosConteo = $objConteo->ejecutarSql($sqlInventario['conteoSqlPrincipal']);
@@ -87,7 +85,7 @@ class InventarioController extends Controller
 
         } else {
 
-            $sqlInventario = $this->armarSqlInventario($filtros,false,$paramPaginacion=[]); 
+            $sqlInventario = $this->armarSqlInventario($filtros, false, $paramPaginacion = []);
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
@@ -97,7 +95,11 @@ class InventarioController extends Controller
             ];
         }
 
-        return response()->json($respuesta, 200);
+        if (!empty($datos)) {
+            return response()->json($respuesta, 200);
+        } else {
+            return response()->json([], 204);
+        }
 
     }
 
@@ -136,13 +138,13 @@ class InventarioController extends Controller
                         break;
                     case 'fecha_doc':
 
-                        if ($this->noEmpty($value) === false ) {
+                        if ($this->noEmpty($value) === false) {
                             $errores['fecha_doc'] = 'El campo fecha_doc esta vacio';
-                        }else{
+                        } else {
 
-                            $resp= $this->validarFechaDocumento($value);
+                            $resp = $this->validarFechaDocumento($value);
 
-                            if($resp['valid']===false){
+                            if ($resp['valid'] === false) {
                                 $errores['fecha_doc'] = $resp['message'];
                             }
 
@@ -192,8 +194,8 @@ class InventarioController extends Controller
     {
         Log::info("================entrando a funcion validar fecha documento ==========");
         Log::info($param);
-        $valid=false;
-        $message='';
+        $valid = false;
+        $message = '';
         $param = trim($param);
         $tieneSeparador = strpos($param, '|');
         if ($tieneSeparador == true) {
@@ -202,49 +204,47 @@ class InventarioController extends Controller
             Log::info("==== explode===");
             Log::info($paramExplode);
             $operador = $paramExplode[0];
-            if($this->validarOperador($operador)){
-                $fechaDesde   = $paramExplode[1];
-                $fechaHasta   = array_key_exists(2,$paramExplode)==true?$paramExplode[2]:null;    
-    
-                if ($this->validateDate($fechaDesde)){
-                    if(is_null($fechaHasta)){
-                        $valid=true;
-                        $message='';
-                    }else{
-                        if ($this->validateDate($fechaHasta)){
-                            $valid=true;
-                            $message='';
-                        }else{
-                            $valid=false;
-                            $message='El formato de la fecha hasta no es valido';
+            if ($this->validarOperador($operador)) {
+                $fechaDesde = $paramExplode[1];
+                $fechaHasta = array_key_exists(2, $paramExplode) == true ? $paramExplode[2] : null;
+
+                if ($this->validateDate($fechaDesde)) {
+                    if (is_null($fechaHasta)) {
+                        $valid = true;
+                        $message = '';
+                    } else {
+                        if ($this->validateDate($fechaHasta)) {
+                            $valid = true;
+                            $message = '';
+                        } else {
+                            $valid = false;
+                            $message = 'El formato de la fecha hasta no es valido';
                         }
                     }
-                    
-                }else{
-                    $valid=false;
-                    $message='El formato de la fecha desde no es valido';
+
+                } else {
+                    $valid = false;
+                    $message = 'El formato de la fecha desde no es valido';
                 }
 
-            }else{
-                $valid=false;
-                $message='El operador logico utilizado en el campo fecha_doc no es valido ';
+            } else {
+                $valid = false;
+                $message = 'El operador logico utilizado en el campo fecha_doc no es valido ';
             }
-           
 
         } else {
-            if ($this->validateDate($param)){
-                $valid=true;
-                $message='';
-            }else{
-                $valid=false;
-                $message='El campo fecha_doc debe tener el formato Y-m-d';
+            if ($this->validateDate($param)) {
+                $valid = true;
+                $message = '';
+            } else {
+                $valid = false;
+                $message = 'El campo fecha_doc debe tener el formato Y-m-d';
             }
         }
-        
 
         return [
-            'valid'=>$valid,
-            'message'=>$message
+            'valid' => $valid,
+            'message' => $message,
         ];
 
     }
@@ -258,7 +258,7 @@ class InventarioController extends Controller
         return true;
     }
 
-    public function armarSqlInventario($filtros,$paginar,$paramPaginacion)
+    public function armarSqlInventario($filtros, $paginar, $paramPaginacion)
     {
         $cadenaWhere = '';
         if (!empty($filtros)) {
@@ -268,18 +268,15 @@ class InventarioController extends Controller
             foreach ($filtros as $filtro => $value) {
 
                 $value = trim($value);
-                $operador='=';
+                $operador = '=';
 
                 $tieneSeparador = strpos($value, '|');
-                if ($tieneSeparador == true) {        
-                    $paramExplode = explode('|', $param);                    
-                    $operador = $paramExplode[0];                      
-                    
-                }
-                
-                
+                if ($tieneSeparador == true) {
+                    $paramExplode = explode('|', $param);
+                    $operador = $paramExplode[0];
 
-                
+                }
+
                 switch ($filtro) {
                     case 'tipo_doc':
 
@@ -330,39 +327,39 @@ class InventarioController extends Controller
             Log::info($cadenaWhere);
 
         }
-        $sqlPrincipal='SELECT * FROM
+        $sqlPrincipal = 'SELECT * FROM
         (
 
-           '.$this->datosConexion->siesa_consulta.'
+           ' . $this->datosConexion->siesa_consulta . '
 
-        ) AS a' . $cadenaWhere ;
+        ) AS a' . $cadenaWhere;
 
         $sqlPrincipalConteo = $sqlPrincipal;
-        if($paginar){
+        if ($paginar) {
             Log::info("========aca entreaaaa========");
-            $sqlPrincipal=$sqlPrincipal.' **paginacion** ';
+            $sqlPrincipal = $sqlPrincipal . ' **paginacion** ';
             Log::info("========sql con **paginacion**========");
             Log::info($sqlPrincipal);
-            $sqlPrincipal=$this->reemplazarParametros($paramPaginacion, $sqlPrincipal);
+            $sqlPrincipal = $this->reemplazarParametros($paramPaginacion, $sqlPrincipal);
             Log::info("=======sql con paginacion====");
             Log::info($sqlPrincipal);
         }
-        
-        $conteoSqlPrincipal=$this->conteoSqlPrincipal($sqlPrincipalConteo);   
+
+        $conteoSqlPrincipal = $this->conteoSqlPrincipal($sqlPrincipalConteo);
 
         Log::info($sqlPrincipal);
         Log::info($conteoSqlPrincipal);
 
         return [
-            'sqlPrincipal'=>$this->aplicarIdentificador($sqlPrincipal),
-            'conteoSqlPrincipal'=>$conteoSqlPrincipal
+            'sqlPrincipal' => $this->aplicarIdentificador($sqlPrincipal),
+            'conteoSqlPrincipal' => $conteoSqlPrincipal,
         ];
 
     }
 
     public function reemplazarParametros($paramPaginacion, $consultaSql)
     {
-        $seccionPaginacion="ORDER BY (SELECT NULL) OFFSET **desde** ROWS FETCH NEXT **hasta** ROWS ONLY";
+        $seccionPaginacion = "ORDER BY (SELECT NULL) OFFSET **desde** ROWS FETCH NEXT **hasta** ROWS ONLY";
 
         if (is_null($consultaSql)) {
             Log::error("El parametro consultasql es obligatoria. Por favor revise este campo en tabla conexion");
@@ -370,49 +367,48 @@ class InventarioController extends Controller
 
         $nuevaConsultaSql = $consultaSql;
         foreach ($paramPaginacion as $key => $parametro) {
-            
+
             foreach ($parametro as $param => $valor) {
-                
-                $nuevaConsultaSql = str_replace('**'.$param.'**',$valor , $nuevaConsultaSql);
-                if($param=='desde' || $param=='hasta'){
-                    $seccionPaginacion = str_replace('**'.$param.'**',$valor , $seccionPaginacion);                    
+
+                $nuevaConsultaSql = str_replace('**' . $param . '**', $valor, $nuevaConsultaSql);
+                if ($param == 'desde' || $param == 'hasta') {
+                    $seccionPaginacion = str_replace('**' . $param . '**', $valor, $seccionPaginacion);
                 }
 
             }
 
         }
 
-        
-        $nuevaConsultaSql = str_replace('**paginacion**',$seccionPaginacion , $nuevaConsultaSql);
-        
-        
+        $nuevaConsultaSql = str_replace('**paginacion**', $seccionPaginacion, $nuevaConsultaSql);
+
         // $nuevaConsultaSql="SET QUOTED_IDENTIFIER OFF; \n".$nuevaConsultaSql." \n SET QUOTED_IDENTIFIER ON;";
 
         Log::info("=============nueva consulta=====");
-        Log::info($nuevaConsultaSql);        
+        Log::info($nuevaConsultaSql);
 
         return $nuevaConsultaSql;
 
     }
 
-    public function aplicarIdentificador($sql){
+    public function aplicarIdentificador($sql)
+    {
 
-        $newSql="SET QUOTED_IDENTIFIER OFF; \n";
-        $newSql.=$sql;
-        $newSql.= "\n SET QUOTED_IDENTIFIER ON;";
+        $newSql = "SET QUOTED_IDENTIFIER OFF; \n";
+        $newSql .= $sql;
+        $newSql .= "\n SET QUOTED_IDENTIFIER ON;";
 
         return $newSql;
     }
 
-    public function conteoSqlPrincipal($sql){
+    public function conteoSqlPrincipal($sql)
+    {
 
-        $newSql='select count(*) as conteo from (';
-        $newSql.=$sql;
-        $newSql.= ') as b ';
+        $newSql = 'select count(*) as conteo from (';
+        $newSql .= $sql;
+        $newSql .= ') as b ';
 
         return $this->aplicarIdentificador($newSql);
     }
-    
 
     public function protegerInyeccionSql($string)
     {
@@ -426,8 +422,8 @@ class InventarioController extends Controller
     public function validarOperador($operador)
     {
         Log::info("===========entrando a la ufncion validar operador=====");
-        Log::info("operador --> ".$operador);
-        $operadores = ['>', '<', '=', '>=','<=', '<>'];
+        Log::info("operador --> " . $operador);
+        $operadores = ['>', '<', '=', '>=', '<=', '<>'];
 
         $result = in_array($operador, $operadores);
         if ($result) {
@@ -445,6 +441,5 @@ class InventarioController extends Controller
     {
         return new ConexionesModel();
     }
-
 
 }
