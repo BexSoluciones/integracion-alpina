@@ -33,6 +33,7 @@ Route::group([
         Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@subirPedidoSiesa');
 
         Route::get('integracionecom/v1/compras-devolucion-compras', 'integracionecom\v1\CompraDevolucionCompraController@getComprasDevolucionesCompra');
-        Route::get('integracionecom/v1/inventario', 'integracionecom\v1\InventarioController@getInventario');
+        Route::get('integracionecom/v1/inventarios', 'integracionecom\v1\InventarioController@getInventario');
+        Route::post('integracionecom/v1/clientes', 'integracionecom\v1\ClienteController@saveCliente');
     });
 });

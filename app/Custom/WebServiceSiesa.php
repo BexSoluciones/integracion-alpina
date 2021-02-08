@@ -260,6 +260,8 @@ class WebServiceSiesa
 
     public function reemplazarParametros($parametros, $consultaSql,$paginacion=false)
     {
+
+        
         $seccionPaginacion="OFFSET **desde** ROWS FETCH NEXT **hasta** ROWS ONLY;";
 
         if (is_null($consultaSql)) {
@@ -267,16 +269,14 @@ class WebServiceSiesa
         }
 
         $nuevaConsultaSql = $consultaSql;
+        
         foreach ($parametros as $key => $parametro) {
             
-            foreach ($parametro as $param => $valor) {
-                
-                // $nuevaConsultaSql = str_replace('**'.$param.'**',DB::connection()->getPdo()->quote($valor) , $nuevaConsultaSql);
+            foreach ($parametro as $param => $valor) { 
                 $nuevaConsultaSql = str_replace('**'.$param.'**',$valor , $nuevaConsultaSql);
                 if($param=='desde' || $param=='hasta'){
                     $seccionPaginacion = str_replace('**'.$param.'**',$valor , $seccionPaginacion);                    
                 }
-
             }
 
         }
@@ -289,9 +289,6 @@ class WebServiceSiesa
         
         
         $nuevaConsultaSql="SET QUOTED_IDENTIFIER OFF; \n".$nuevaConsultaSql." \n SET QUOTED_IDENTIFIER ON;";
-
-        Log::info("=============nueva consulta=====");
-        Log::info($nuevaConsultaSql);        
 
         return $nuevaConsultaSql;
 

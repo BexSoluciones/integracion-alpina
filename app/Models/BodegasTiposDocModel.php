@@ -21,7 +21,7 @@ class BodegasTiposDocModel extends Model
 
     public function validarTipoDocumento($tipoDoc,$bodega){
 
-        $datos=$this->where('bodega_ecom','=',$bodega)->where('tipo_documento_ecom','=',$tipoDoc)->get();
+        $datos=$this->where('bodega_siesa','=',$bodega)->where('tipo_documento_siesa','=',$tipoDoc)->get();
 
         if(count($datos)>0){
             return true;

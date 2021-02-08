@@ -87,6 +87,18 @@ class AuthController extends Controller
         ]);
     }
 
+    public function validarOperador($operador)
+    {
+        Log::info("===========entrando a la ufncion validar operador=====");
+        Log::info("operador --> " . $operador);
+        $operadores = ['>', '<', '=', '>=', '<=', '<>'];
+
+        $result = in_array($operador, $operadores);
+        if ($result) {
+            return true;
+        }
+        return false;
+    }
     /**
      * Cierre de sesión (anular el token)
      */

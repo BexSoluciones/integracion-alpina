@@ -4,9 +4,9 @@ namespace App\Http\Controllers\integracionecom\v1;
 
 use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
-use App\Traits\TraitHerramientas;
-use App\Models\ConexionesModel;
 use App\Models\BodegasTiposDocModel;
+use App\Models\ConexionesModel;
+use App\Traits\TraitHerramientas;
 use Illuminate\Http\Request;
 use Log;
 use Storage;
@@ -31,11 +31,8 @@ class PedidoController extends Controller
         return new WebServiceSiesa($idConexion);
     }
 
-    
-public function subirPedidoSiesa(Request $request)
+    public function subirPedidoSiesa(Request $request)
     {
-    
-
 
         $respValidacion = $this->validarEstructuraJson($request);
 
@@ -45,188 +42,167 @@ public function subirPedidoSiesa(Request $request)
 
             return response()->json([
                 'created' => false,
-                'code'=>412,
+                'code' => 412,
                 'errors' => $respValidacion['errors'],
             ], 412);
 
-        }       
+        }
 
-        
+        $pedido = $request->input('data')[0];
+        $detallesPedido = $request->input('data.0.detalle_pedido');
 
-            $pedido= $request->input('data')[0];
-            $detallesPedido = $request->input('data.0.detalle_pedido');
-            
+        if (count($detallesPedido) > 0) {
 
-            if (count($detallesPedido) > 0) {
+            $cadena = "";
+            $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
 
+            $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
+            $cadena .= str_pad(430, 4, "0", STR_PAD_LEFT); //Tipo de registro
+            $cadena .= '00'; //Subtipo de registro
+            $cadena .= '02'; //version del tipo de registro
+            $cadena .= '001'; //Compañia
+            $cadena .= '1'; //Indicador para liquidar impuestos
+            $cadena .= '0'; //Indica si el numero consecutivo de docto es manual o automático
+            $cadena .= '1'; //Indicador de contacto
+            $cadena .= $pedido['centro_operacion']; //Centro de operación del documento
+            $cadena .= $pedido['tipo_documento']; //Tipo de documento
+            $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Numero documento
+            $cadena .= $pedido['fecha_pedido']; //Fecha del documento
+            $cadena .= '502'; //Clase interna del documento
+            $cadena .= '2'; //Estado del documento
+            $cadena .= '0'; //Indicador backorder del documento
+            $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a facturar
+            $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a facturar
+            $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a despachar
+            $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a despachar
+            $cadena .= $pedido['tipo_cliente']; //Tipo de cliente
+            $cadena .= $pedido['centro_operacion']; //Centro de operacion de la factura
+            $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha Entrega pedido
+            $cadena .= '000'; //Nro. dias de entrega del documento
+            $cadena .= str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT); //Orden de compra del Documento
+            $cadena .= str_pad($pedido['numero_pedido'], 10, "0", STR_PAD_LEFT); //Referencia del documento
+            $cadena .= str_pad('GENERICO', 10, " ", STR_PAD_RIGHT); //Codigo de cargue del documento
+            $cadena .= 'COP'; //Codigo de moneda del documento
+            $cadena .= 'COP'; //Moneda base de conversión
+            $cadena .= '00000001.0000'; //Tasa de conversión
+            $cadena .= 'COP'; //Moneda local
+            $cadena .= '00000001.0000'; //Tasa local
+            $cadena .= 'C01'; //Condicion de pago
+            $cadena .= '0'; //Estado de impresión del documento
+            $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido']."//------Vendedor:".$pedido['vendedor']."")), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
+            $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
+            $cadena .= '000'; //Punto de envio
+            $cadena .= str_pad('500', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
+            $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //Contacto
+            $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 1
+            $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 2
+            $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 3
+            $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Pais
+            $cadena .= str_pad('', 2, " ", STR_PAD_RIGHT); //Departamento/Estado
+            $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Ciudad
+            $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Barrio
+            $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //Telefono
+            $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //fax
+            $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Codigo postal
+            $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //E-mail
+            $cadena .= '0'; //indicador de descuento
+            $cadena .= "\n";
+
+            //Creacion Detalle - movimientos pedido
+            $contador = 3;
+            $contadorDetallePedido = 1;
+            foreach ($detallesPedido as $key => $detallePedido) {
+                //---Declarando variables
+                $listaPrecio = $detallePedido['lista_precio'];
+                $productoSiesa = $this->obtenerCodigoProductoSiesa($detallePedido['codigo_producto']);
+                $codigoProductoSiesa=$productoSiesa[0]['codigo_producto'];
                 
-                $cadena = "";
-                $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
-
-                $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
-                $cadena .= str_pad(430, 4, "0", STR_PAD_LEFT); //Tipo de registro
-                $cadena .= '00'; //Subtipo de registro
-                $cadena .= '02'; //version del tipo de registro
-                $cadena .= '001'; //Compañia
-                $cadena .= '1'; //Indicador para liquidar impuestos
-                $cadena .= '1'; //Indica si el numero consecutivo de docto es manual o automático
-                $cadena .= '1'; //Indicador de contacto
-                $cadena .= $pedido['centro_operacion_bodega']; //Centro de operación del documento
-                $cadena .= $this->remplazarTipoDocumento($pedido['tipo_documento']); //Tipo de documento
-                $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Numero documento
-                $cadena .= $pedido['fecha_pedido']; //Fecha del documento
-                $cadena .= '502'; //Clase interna del documento
-                $cadena .= '2'; //Estado del documento
-                $cadena .= '0'; //Indicador backorder del documento
-                $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a facturar
-                $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a facturar
-                $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a despachar
-                $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a despachar
-                $cadena .= $pedido['tipo_cliente']; //Tipo de cliente
-                $cadena .= $pedido['centro_operacion_bodega']; //Centro de operacion de la factura
-                $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha Entrega pedido
+                $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
+                $cadena .= '0431'; //Tipo registro
+                $cadena .= '00'; //Subtipo registro
+                $cadena .= '02'; //Version del tipo de registro
+                $cadena .= '001'; //compañia
+                $cadena .= $pedido['centro_operacion']; //Centro de operacion
+                $cadena .= $pedido['tipo_documento']; //Tipo de documento
+                $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Consecutivo de documento
+                $cadena .= str_pad($contadorDetallePedido, 10, "0", STR_PAD_LEFT); //Numero de registro --> hacer contador
+                $cadena .= str_pad($codigoProductoSiesa, 7, "0", STR_PAD_LEFT); //Item
+                $cadena .= str_pad('', 50, " ", STR_PAD_LEFT); //Referencia item
+                $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Codigo de barras
+                $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Extencion 1
+                $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Extencion 2
+                $cadena .= $pedido['bodega']; //Bodega
+                $cadena .= '501'; //Concepto
+                $cadena .= '01'; //Motivo
+                $cadena .= '0'; //Indicador de obsequio
+                $cadena .= $pedido['centro_operacion']; //Centro de operacion movimiento
+                $cadena .= str_pad('01', 20, " ", STR_PAD_RIGHT); //Unidad de negocio movimiento
+                $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Centro de costo movimiento
+                $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Proyecto
+                $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha de entrega del pedido
                 $cadena .= '000'; //Nro. dias de entrega del documento
-                $cadena .= str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT); //Orden de compra del Documento
-                $cadena .= str_pad($pedido['numero_pedido'], 10, "0", STR_PAD_LEFT); //Referencia del documento
-                $cadena .= str_pad('GENERICO', 10, " ", STR_PAD_RIGHT); //Codigo de cargue del documento
-                $cadena .= 'COP'; //Codigo de moneda del documento
-                $cadena .= 'COP'; //Moneda base de conversión
-                $cadena .= '00000001.0000'; //Tasa de conversión
-                $cadena .= 'COP'; //Moneda local
-                $cadena .= '00000001.0000'; //Tasa local
-                $cadena .= 'C08'; //Condicion de pago *preguntar*
-                $cadena .= '0'; //Estado de impresión del documento                
-                $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido'])), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
-                $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
-                $cadena .= '000'; //Punto de envio
-                $cadena .= str_pad('500', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
-                $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //Contacto
-                $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 1
-                $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 2
-                $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 3
-                $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Pais
-                $cadena .= str_pad('', 2, " ", STR_PAD_RIGHT); //Departamento/Estado
-                $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Ciudad
-                $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Barrio
-                $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //Telefono
-                $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //fax
-                $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Codigo postal
-                $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //E-mail
-                $cadena .= '0'; //indicador de descuento
+                $cadena .= $listaPrecio; //Lista de precio-->agregar al migrar productos
+                $cadena .= 'UNID'; //Unidad de medida-->pendiente
+                $cadena .= str_pad(intval($detallePedido['cantidad']), 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad base
+                $cadena .= str_pad('', 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad adicional
+                $cadena .= str_pad(intval($detallePedido['precio_producto']), 15, "0", STR_PAD_LEFT) . '.0000'; //Precio unitario
+                $cadena .= '0'; //Impuestos asumidos
+                $cadena .= str_pad('', 255, " ", STR_PAD_LEFT); //Notas
+                $cadena .= str_pad('', 2000, " ", STR_PAD_LEFT); //Descripcion
+                $cadena .= '5'; //Indicador backorder del movimiento
+                $cadena .= '2'; //Indicador de precio
                 $cadena .= "\n";
-
-                //Creacion Detalle - movimientos pedido
-                $contador = 3;
-                $contadorDetallePedido = 1;
-                foreach ($detallesPedido as $key => $detallePedido) {
-                    //---Declarando variables
-                    $bodega = $detallePedido['bodega'];
-                    switch ($bodega) {
-
-                        case 'P01':
-                            $bodega = '00121';
-                            break;
-                        case '':
-                            if($this->noEmpty($value) === false){
-                                $errores[$bodega] = 'El campo Bodega no valido';
-                            }
-                            break;
-                    }
-                    $listaPrecio = $detallePedido['lista_precio'];
-                    $centroOperacion = $detallePedido['centro_operacion'];
-
-                    //----armando cadena
-$datosBodeDoc=$this->remplazarTipoDocumento($pedido['tipo_documento']);
-$tipoDoc=$datosBodeDoc['tipo_doc'];
-$bodega=$datosBodeDoc['bodega'];
-
-                    $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
-                    $cadena .= '0431'; //Tipo registro
-                    $cadena .= '00'; //Subtipo registro
-                    $cadena .= '02'; //Version del tipo de registro
-                    $cadena .= '001'; //compañia
-                    $cadena .= $centroOperacion; //Centro de operacion
-                    $cadena .= $tipoDocu; //Tipo de documento
-                    $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Consecutivo de documento
-                    $cadena .= str_pad($contadorDetallePedido, 10, "0", STR_PAD_LEFT); //Numero de registro --> hacer contador
-                    $cadena .= str_pad($detallePedido['codigo_producto'], 7, "0", STR_PAD_LEFT); //Item
-                    $cadena .= str_pad('', 50, " ", STR_PAD_LEFT); //Referencia item
-                    $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Codigo de barras
-                    $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Extencion 1
-                    $cadena .= str_pad('', 20, " ", STR_PAD_LEFT); //Extencion 2
-                    $cadena .= $bodega; //Bodega
-                    $cadena .= '501'; //Concepto
-                    $cadena .= '01'; //Motivo
-                    $cadena .= '0'; //Indicador de obsequio
-                    $cadena .= $centroOperacion; //Centro de operacion movimiento
-                    $cadena .= str_pad('01', 20, " ", STR_PAD_RIGHT); //Unidad de negocio movimiento
-                    $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Centro de costo movimiento
-                    $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Proyecto
-                    $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha de entrega del pedido
-                    $cadena .= '000'; //Nro. dias de entrega del documento
-                    $cadena .= $listaPrecio; //Lista de precio-->agregar al migrar productos
-                    $cadena .= 'UNID'; //Unidad de medida-->pendiente
-                    $cadena .= str_pad(intval($detallePedido['cantidad']), 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad base
-                    $cadena .= str_pad('', 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad adicional
-                    $cadena .= str_pad(intval($detallePedido['precio_producto']), 15, "0", STR_PAD_LEFT) . '.0000'; //Precio unitario
-                    $cadena .= '0'; //Impuestos asumidos
-                    $cadena .= str_pad('', 255, " ", STR_PAD_LEFT); //Notas
-                    $cadena .= str_pad('', 2000, " ", STR_PAD_LEFT); //Descripcion
-                    $cadena .= '5'; //Indicador backorder del movimiento
-                    $cadena .= '2'; //Indicador de precio
-                    $cadena .= "\n";
-                    $contador++;
-                    $contadorDetallePedido++;
-                }
-                
-                $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT) . "99990001001";
-
-                $lineas = explode("\n", $cadena);
-
-                $nombreArchivo = str_pad($pedido['numero_pedido'], 15, "0", STR_PAD_LEFT) . '.txt';
-                Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
-                $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
-
-                
-                $ip= $this->getIpCliente();
-                Log::info($ip);
-
-                // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-                //     dump('no existe el pedido ' . $pedido['numero_pedido']);
-                //      $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
-                //     if (empty($resp)) {
-                //         // $this->cambiarEstadoPedido($pedido->id_order, 15);
-                //         $this->info('todo ok');
-                //     } else {
-                //         //  $resp;
-                //         $mensaje = "";
-                //         foreach ($resp->NewDataSet->Table as $key => $errores) {
-
-                //             $mensaje .= "error $key ->";
-                //             foreach ($errores as $key => $detalleError) {
-                //                 $mensaje .= '***' . $key . '=>' . $detalleError;
-                //             }
-
-                //         }
-                //         dump($mensaje);
-                //         // $this->enviarMensaje($pedido->id_order, $mensaje, $pedido->id_customer, $pedido->email);
-                //         // $this->cambiarEstadoPedido($pedido->id_order, 14);
-                //         // $this->info('error al enviar pedido');
-                        
-                //     }
-
-                // } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-                //     $this->info('ya existe el pedido ' . $pedido->id_order);
-                //     $this->cambiarEstadoPedido($pedido->id_order, 15);
-                // }
-
+                $contador++;
+                $contadorDetallePedido++;
             }
 
-            return response()->json([
-                'created' => true,
-                'code'=>201,
-                'errors' => 0,
-            ], 201);
+            $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT) . "99990001001";
+
+            $lineas = explode("\n", $cadena);
+
+            $nombreArchivo = str_pad($pedido['numero_pedido'], 15, "0", STR_PAD_LEFT) . '.txt';
+            Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
+            $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
+
+            $ip = $this->getIpCliente();
+            Log::info($ip);
+
+            // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+            //     dump('no existe el pedido ' . $pedido['numero_pedido']);
+            //      $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
+            //     if (empty($resp)) {
+            //         // $this->cambiarEstadoPedido($pedido->id_order, 15);
+            //         $this->info('todo ok');
+            //     } else {
+            //         //  $resp;
+            //         $mensaje = "";
+            //         foreach ($resp->NewDataSet->Table as $key => $errores) {
+
+            //             $mensaje .= "error $key ->";
+            //             foreach ($errores as $key => $detalleError) {
+            //                 $mensaje .= '***' . $key . '=>' . $detalleError;
+            //             }
+
+            //         }
+            //         dump($mensaje);
+            //         // $this->enviarMensaje($pedido->id_order, $mensaje, $pedido->id_customer, $pedido->email);
+            //         // $this->cambiarEstadoPedido($pedido->id_order, 14);
+            //         // $this->info('error al enviar pedido');
+
+            //     }
+
+            // } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+            //     $this->info('ya existe el pedido ' . $pedido->id_order);
+            //     $this->cambiarEstadoPedido($pedido->id_order, 15);
+            // }
+
+        }
+
+        return response()->json([
+            'created' => true,
+            'code' => 201,
+            'errors' => 0,
+        ], 201);
 
     }
 
@@ -264,11 +240,6 @@ $bodega=$datosBodeDoc['bodega'];
         $formatoValido = false;
         $formatoValido = $request->input('data') ?? false;
 
-        // if(isset($formatoValido)){
-        //     return true;
-        // }else{
-        //     return false;
-        // }
         if (!$formatoValido) {
             return [
                 'valid' => false,
@@ -303,7 +274,7 @@ $bodega=$datosBodeDoc['bodega'];
             }
 
             $item++;
-        }        
+        }
 
         if ($respValidarEncabezado['valid'] == false || count($erroresDetallePedido) > 0) {
 
@@ -332,29 +303,33 @@ $bodega=$datosBodeDoc['bodega'];
 
         $rules = [
             'tipo_documento' => 'required',
+            'bodega' => 'required',
             'numero_pedido' => 'required|max:8',
             'tipo_cliente' => 'required|digits:4',
             'fecha_pedido' => 'required|date_format:"Ymd"',
             'nit_cliente' => 'required|digits_between:1,15',
             'sucursal_cliente' => 'required|digits_between:1,15',
+            'centro_operacion' => 'required|digits_between:1,15',
+            'vendedor'=>'required',
             'observaciones_pedido' => 'max:2000',
         ];
 
         $validator = Validator::make($datosEncPedido, $rules);
-        $tipoDocumentoValido=$this->validarTipoDocumento($datosEncPedido['tipo_documento']);
+
+        $tipoDocumentoValido = $this->validarTipoDocumento($datosEncPedido['tipo_documento'], $datosEncPedido['bodega']);
 
         if ($validator->fails()) {
             return [
                 'valid' => false,
                 'errors' => $validator->errors(),
             ];
-        }else if($tipoDocumentoValido['valid']===false){
+        } else if ($tipoDocumentoValido['valid'] === false) {
             return [
                 'valid' => false,
                 'errors' => $tipoDocumentoValido['errors'],
             ];
 
-        }else{
+        } else {
             return [
                 'valid' => true,
                 'errors' => 0,
@@ -363,19 +338,18 @@ $bodega=$datosBodeDoc['bodega'];
 
     }
 
-    public function validarDetallePedido($datosDetallePedido,$tipoDocu)
+    public function validarDetallePedido($datosDetallePedido)
     {
 
         $rules = [
-            'codigo_producto' => 'required|max:7',
-            'bodega' => 'required',
+            'codigo_producto' => 'required',
             'lista_precio' => 'required|size:3',
             'cantidad' => 'required|digits_between:1,15',
-            'precio_producto' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
+            'precio_unitario' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
         ];
 
         $validator = Validator::make($datosDetallePedido, $rules);
-        
+
         if ($validator->fails()) {
             return [
                 'valid' => false,
@@ -422,23 +396,32 @@ $bodega=$datosBodeDoc['bodega'];
 
     }
 
-    public function validarTipoDocumento($tipoDoc,$bodega){
+    public function validarTipoDocumento($tipoDoc, $bodega)
+    {
 
-                 
-        $objBodegaTipoDo= new BodegasTiposDocModel();
-        $resp=$objBodegaTipoDo->validarTipoDocumento($tipoDoc,$bodega);  
-        
-        if($resp===true){
-                    return [
-                        'valid' => true,
-                        'errors' => 0,
-                    ];
-        }else{
-                    return [
-                        'valid' => false,
-                        'errors' => 'El tipo de documento '.$tipoDoc.' y la bodega '.$bodega.' no pertenece a un documento valido',
-                    ]; 
+        $objBodegaTipoDo = new BodegasTiposDocModel();
+        $resp = $objBodegaTipoDo->validarTipoDocumento($tipoDoc, $bodega);
+
+        if ($resp === true) {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
+        } else {
+            return [
+                'valid' => false,
+                'errors' => 'El tipo de documento ' . $tipoDoc . ' y la bodega ' . $bodega . ' no pertenece a un documento valido',
+            ];
         }
+    }
+
+    public function obtenerCodigoProductoSiesa($productoEcom)
+    {
+        $parametros = [
+            ['PARAMETRO1' => $productoEcom],
+        ];
+        return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);       
+
     }
 
     // $tipoDoc=strtoupper($tipoDoc);
@@ -450,76 +433,55 @@ $bodega=$datosBodeDoc['bodega'];
     //             'valid' => true,
     //             'errors' => 0,
     //         ];
-            
+
     //     }
     //     return [
     //         'valid' => false,
     //         'errors' => 'Tipo de documento no valido, debe ser : EC1, EC2, EC3, EC4,EC5',
-    //     ]; 
-
-    public function remplazarTipoDocumento($tipoDoc, $bodega){
-
-        $nuevoTipoDoc="";
-        $nuevaBodega="";
-            switch ($tipoDoc) {
-                case 'EC1':
-                    $nuevoTipoDoc['tipo_docu'] = 'PUM';
-                    $nuevoTipoDoc['bodega'] = 'PUM';
-                    break;
-                case 'EC2': 
-                    $nuevoTipoDoc = 'PUD';
-                    break;
-                case 'EC3':
-                    $nuevoTipoDoc = 'PUZ';
-                    break;
-                case 'EC4':
-                    $nuevoTipoDoc = 'PUC';
-                    break;
-                case 'EC5':
-                    $nuevoTipoDoc = 'PUA';
-                    break;
-                
-            }
-
-            return $nuevoTipoDoc;
-            
-    }
-
-  
-    
-
-    
+    //     ];
 
 }
 
 // {
 //     "data":[
 //         {
-//             "numero_pedido": "PEC80001",
-//             "tipo_cliente":"0001",
-//             "fecha_pedido":"20201101",
-//             "nit_cliente":"5415454",
-//             "sucursal_tercero":"100019245745",
-//             "observaciones_pedido":"",
+//             "numero_pedido": "00014004",
+//             "tipo_documento":"PV",
+//             "bodega":"00121",
+//             "centro_operacion":"001",
+//             "tipo_cliente":"0003",
+//             "fecha_pedido":"20210203",
+//             "nit_cliente":"1037606716",
+//             "sucursal_cliente":"001",
+//             "observaciones_pedido":"Prueba bexsoluciones",
 //             "detalle_pedido":[
 //                     {
-//                         "codigo_producto": "6039",
-//                         "bodega":"00128",
-//                         "lista_precio":"ECOM",
-//                         "numero_pedido": "PEC80001",
-//                         "cantidad":10,
-//                         "precio_producto": 2550
+//                         "codigo_producto": "67850169",
+//                         "lista_precio":"B2B",
+//                         "cantidad":2,
+//                         "precio_unitario": 8116
 //                     },
 //                     {
-//                         "codigo_producto": "6040",
-//                         "bodega":"00128",
-//                         "lista_precio":"ECOM",
-//                         "numero_pedido": "PEC80001",
-//                         "cantidad":30,
-//                         "precio_producto": 4800
+//                         "codigo_producto": "CO0870",
+//                         "lista_precio":"B2B",
+//                         "cantidad":2,
+//                         "precio_unitario": 17802
+//                     },
+//                     {
+//                         "codigo_producto": "67580558",
+//                         "lista_precio":"B2B",
+//                         "cantidad":1,
+//                         "precio_unitario": 8365
+//                     },
+//                     {
+//                         "codigo_producto": "67780623",
+//                         "lista_precio":"B2B",
+//                         "cantidad":3,
+//                         "precio_unitario": 11371
 //                     }
 //             ]
 
 //         }
+
 //     ]
 // }
