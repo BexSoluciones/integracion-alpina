@@ -289,7 +289,7 @@ class WebServiceSiesa
         
         
         $nuevaConsultaSql="SET QUOTED_IDENTIFIER OFF; \n".$nuevaConsultaSql." \n SET QUOTED_IDENTIFIER ON;";
-
+        // Log::info($nuevaConsultaSql);
         return $nuevaConsultaSql;
 
     }

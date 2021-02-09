@@ -36,7 +36,7 @@ class PedidoController extends Controller
 
         $respValidacion = $this->validarEstructuraJson($request);
 
-        Log::info($respValidacion);
+        // Log::info($respValidacion);
 
         if ($respValidacion['valid'] == false) {
 
@@ -145,7 +145,7 @@ class PedidoController extends Controller
                 $cadena .= 'UNID'; //Unidad de medida-->pendiente
                 $cadena .= str_pad(intval($detallePedido['cantidad']), 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad base
                 $cadena .= str_pad('', 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad adicional
-                $cadena .= str_pad(intval($detallePedido['precio_producto']), 15, "0", STR_PAD_LEFT) . '.0000'; //Precio unitario
+                $cadena .= str_pad(intval($detallePedido['precio_unitario']), 15, "0", STR_PAD_LEFT) . '.0000'; //Precio unitario
                 $cadena .= '0'; //Impuestos asumidos
                 $cadena .= str_pad('', 255, " ", STR_PAD_LEFT); //Notas
                 $cadena .= str_pad('', 2000, " ", STR_PAD_LEFT); //Descripcion
@@ -164,37 +164,49 @@ class PedidoController extends Controller
             Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
             $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
 
-            $ip = $this->getIpCliente();
-            Log::info($ip);
+            // $ip = $this->getIpCliente();
+            // Log::info($ip);
 
-            // if (!$this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-            //     dump('no existe el pedido ' . $pedido['numero_pedido']);
-            //      $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
-            //     if (empty($resp)) {
-            //         // $this->cambiarEstadoPedido($pedido->id_order, 15);
-            //         $this->info('todo ok');
-            //     } else {
-            //         //  $resp;
-            //         $mensaje = "";
-            //         foreach ($resp->NewDataSet->Table as $key => $errores) {
+            if (!$this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+                
+                 $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
+                if (empty($resp)) {
 
-            //             $mensaje .= "error $key ->";
-            //             foreach ($errores as $key => $detalleError) {
-            //                 $mensaje .= '***' . $key . '=>' . $detalleError;
-            //             }
+                    return response()->json([
+                        'created' => true,
+                        'code' => 201,
+                        'errors' => $respValidacion['errors'],
+                    ], 201);
+                    // $this->cambiarEstadoPedido($pedido->id_order, 15);
+                    // $this->info('todo ok');
+                } else {
+                    //  $resp;
+                    $mensaje = "";
+                    foreach ($resp->NewDataSet->Table as $key => $errores) {
 
-            //         }
-            //         dump($mensaje);
-            //         // $this->enviarMensaje($pedido->id_order, $mensaje, $pedido->id_customer, $pedido->email);
-            //         // $this->cambiarEstadoPedido($pedido->id_order, 14);
-            //         // $this->info('error al enviar pedido');
+                        $mensaje .= "error $key ->";
+                        foreach ($errores as $key => $detalleError) {
+                            $mensaje .= '***' . $key . '=>' . $detalleError;
+                        }
 
-            //     }
+                    }
 
-            // } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-            //     $this->info('ya existe el pedido ' . $pedido->id_order);
-            //     $this->cambiarEstadoPedido($pedido->id_order, 15);
-            // }
+                    Log::info(print_r($resp->NewDataSet->Table,true));
+                    
+
+                    return response()->json([
+                        'created' => false,
+                        'code' => 412,
+                        'errors' => "Ha ocurrido un error inesperado al crear el pedido,por favor contactarse con el administrador. Fecha de ejecucion: ".date('Y-m-d h:i:s'),
+                    ], 201);
+                    
+
+                }
+
+            } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+                $this->info('ya existe el pedido ' . $pedido->id_order);
+                $this->cambiarEstadoPedido($pedido->id_order, 15);
+            }
 
         }
 
@@ -387,6 +399,10 @@ class PedidoController extends Controller
             ['PARAMETRO3' => $numDoctoReferencia],
         ];
         $resultado = $this->getWebServiceSiesa(27)->ejecutarConsulta($parametros);
+
+        // Log::info("=======respuesta existe pedido=====");
+        // Log::info($resultado);
+        // dd("fin validando pedido");
 
         if (!empty($resultado)) {
             return true;
