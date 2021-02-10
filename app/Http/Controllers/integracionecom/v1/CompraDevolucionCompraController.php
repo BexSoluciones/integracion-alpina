@@ -16,6 +16,8 @@ class CompraDevolucionCompraController extends Controller
 
     public function getComprasDevolucionesCompra(Request $request)
     {
+
+        
         //---------valida filtros en caso de que existan
         $filtros = $request->input('filter');
         $erroresValidacionFiltro = $this->validarFiltros($filtros);
@@ -37,56 +39,64 @@ class CompraDevolucionCompraController extends Controller
         //---------Armamos sql con filtros
         $sqlCompraDevCompra = $this->armarSqlCompraDevoCompra($filtros);
 
-        if (!is_null($pagina)) {
-            $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 1000;
-            $desde = (((int) ($pagina) - 1) * (int) ($filasXpagina));
-            $hasta = (int) ($filasXpagina);
-            $anterior = $pagina > 2 ? $pagina - 1 : 1;
-            $siguiente = $pagina + 1;
+        // if (!is_null($pagina)) {
+        //     $filasXpagina = $request->input('per_page') && ctype_digit($request->input('per_page')) ? $request->input('per_page') : 1000;
+        //     $desde = (((int) ($pagina) - 1) * (int) ($filasXpagina));
+        //     $hasta = (int) ($filasXpagina);
+        //     $anterior = $pagina > 2 ? $pagina - 1 : 1;
+        //     $siguiente = $pagina + 1;
 
-            $parametros = [
-                ['desde' => $desde],
-                ['hasta' => $hasta],
-            ];
+        //     $parametros = [
+        //         ['desde' => $desde],
+        //         ['hasta' => $hasta],
+        //     ];
 
-            Log::info($parametros);
+        //     Log::info($parametros);
 
-            $objConteo = $this->getWebServiceSiesa($idConexionConteo);
-            $datosConteo = $objConteo->ejecutarConsulta($parametros, false);
+        //     $objConteo = $this->getWebServiceSiesa($idConexionConteo);
+        //     $datosConteo = $objConteo->ejecutarConsulta($parametros, false);
 
-            $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
-            $datos = $objWebserviceSiesa->ejecutarConsulta($parametros, true);
+        //     $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
+        //     $datos = $objWebserviceSiesa->ejecutarConsulta($parametros, true);
 
-            Log::info("============datos conteo===========");
-            Log::info($datosConteo);
+        //     Log::info("============datos conteo===========");
+        //     Log::info($datosConteo);
 
-            $totalRegistros = $datosConteo[0]['conteo'];
-            $totalPaginas = ceil($totalRegistros / $filasXpagina);
+        //     $totalRegistros = $datosConteo[0]['conteo'];
+        //     $totalPaginas = ceil($totalRegistros / $filasXpagina);
 
-            $respuesta = [
-                'code' => 200,
-                'data' => $datos,
-                'links' => [
-                    'previous' => $pagina == 1 ? null : url('/') . '/' . $rutaActual . '?page=' . $anterior,
-                    'next' => url('/') . '/' . $rutaActual . '?page=' . $siguiente,
-                ],
-                'meta' => [
-                    'total_rows' => $totalRegistros,
-                    'total_page' => $totalPaginas,
+        //     $respuesta = [
+        //         'code' => 200,
+        //         'data' => $datos,
+        //         'links' => [
+        //             'previous' => $pagina == 1 ? null : url('/') . '/' . $rutaActual . '?page=' . $anterior,
+        //             'next' => url('/') . '/' . $rutaActual . '?page=' . $siguiente,
+        //         ],
+        //         'meta' => [
+        //             'total_rows' => $totalRegistros,
+        //             'total_page' => $totalPaginas,
 
-                ],
-            ];
+        //         ],
+        //     ];
 
-        } else {
+        // } else {
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlCompraDevCompra);
 
+            $datosAgrupados = $this->groupArray($datos, 'consec_doc',
+                [
+                    'cia', 'centro_operacion', 'tipo_doc', 'consec_doc', 'fecha_doc', 'periodo_doc', 'nit','razon_social','sucursal_terc','valor_base_gravable','observacion'
+                ]
+            );
+
             $respuesta = [
                 'code' => 200,
-                'data' => $datos,
+                'data' => $datosAgrupados,
             ];
-        }
+
+            
+        // }
 
         return response()->json($respuesta, 200);
 
@@ -327,7 +337,7 @@ class CompraDevolucionCompraController extends Controller
 
         $sql = '
         SET QUOTED_IDENTIFIER OFF;
-        SELECT top 5 * FROM
+        SELECT  * FROM
         (SELECT 
 		t350_co_docto_contable.f350_id_cia as cia, 
 		t350_co_docto_contable.f350_id_co as centro_operacion, 
@@ -344,16 +354,8 @@ class CompraDevolucionCompraController extends Controller
 		t202_mm_proveedores.f202_id_sucursal as sucursal_terc, 
 		t350_co_docto_contable.f350_total_base_gravable as valor_base_gravable, 
 		t350_co_docto_contable.f350_notas as observacion,
-		substring(t124_mc_items_referencias.f124_referencia,4,15) as Item, 
-		CASE t150_mc_bodegas.f150_id 
-                WHEN "00111" THEN "P01"
-                WHEN "00121" THEN "P01"
-                WHEN "00124" THEN "P01"
-                WHEN "00208" THEN "P01"
-                WHEN "00408" THEN "P01"
-                WHEN "00508" THEN "P01"
-                ELSE f150_id
-            END as Bodega,
+		substring(t124_mc_items_referencias.f124_referencia,4,15) as item, 
+		t150_mc_bodegas.f150_id  as Bodega,
 		t470_cm_movto_invent.f470_ind_impuesto_precio_venta as impuesto,
 		t470_cm_movto_invent.f470_id_unidad_medida as unid_medida, 
 		t470_cm_movto_invent.f470_cant_1 as cantidad, 
@@ -374,9 +376,9 @@ class CompraDevolucionCompraController extends Controller
 		INNER JOIN t121_mc_items_extensiones ON (f470_rowid_item_ext = f121_rowid)
 		INNER JOIN t120_mc_items on (f121_rowid_item = f120_rowid)
 		INNER JOIN t124_mc_items_referencias on (f121_rowid_item = f124_rowid_item)
-	WHERE (f350_id_tipo_docto = "EMC" OR f350_id_tipo_docto = "DP") AND t350_co_docto_contable.f350_fecha >= "2021-01-07"
-	 	--AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
-		--AND f124_referencia LIKE "UNI%"
+	WHERE (f350_id_tipo_docto = "EMC" OR f350_id_tipo_docto = "DP") AND t350_co_docto_contable.f350_fecha &gt;= "2021-01-28"
+	 	AND (f150_id = "00111" OR f150_id = "00121" OR f150_id = "00124" OR f150_id = "00208" OR f150_id = "00408" OR f150_id = "00508")
+		AND f124_referencia LIKE "UNI%"
         ) AS a' . $cadenaWhere . ';
 
         SET QUOTED_IDENTIFIER ON;
