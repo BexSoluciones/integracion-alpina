@@ -20,8 +20,8 @@ class InventarioController extends Controller
     public function __construct()
     {
         $this->datosConexion = $this->getConexionesModel()->getConexionXid(self::ID_CONEXION);
-        Log::info("=========datos conexion inventario=====");
-        Log::info($this->datosConexion);
+        // Log::info("=========datos conexion inventario=====");
+        // Log::info($this->datosConexion);
     }
 
     public function getInventario(Request $request)
@@ -69,19 +69,19 @@ class InventarioController extends Controller
             $totalRegistros = $datosConteo[0]['conteo'];
             $totalPaginas = ceil($totalRegistros / $filasXpagina);
 
-            $respuesta = [
-                'code' => 200,
-                'data' => $datos,
-                'links' => [
+            $respuesta['code'] = 200;
+            $respuesta['data'] = $datos;
+            if ($totalPaginas > 1) {
+                $respuesta['links'] = [
                     'previous' => $pagina == 1 ? null : url('/') . '/' . $rutaActual . '?page=' . $anterior,
                     'next' => url('/') . '/' . $rutaActual . '?page=' . $siguiente,
-                ],
-                'meta' => [
+                ];
+
+                $respuesta['meta'] = [
                     'total_rows' => $totalRegistros,
                     'total_page' => $totalPaginas,
-
-                ],
-            ];
+                ];
+            }
 
         } else {
 
@@ -89,16 +89,23 @@ class InventarioController extends Controller
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
+            $datosAgrupados = $this->groupArray($datos, 'consec_doc',
+                [
+                    'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
+                ]
+            );
+            // Log::info("======== datos agrupados =====");
+            // Log::info($datosAgrupados);
             $respuesta = [
                 'code' => 200,
-                'data' => $datos,
+                'data' => $datosAgrupados,
             ];
         }
 
         if (!empty($datos)) {
             return response()->json($respuesta, 200);
         } else {
-            return response()->json([], 204);
+            return response()->json([], 404);
         }
 
     }
@@ -149,9 +156,7 @@ class InventarioController extends Controller
                             }
 
                         }
-
                         break;
-
                 }
 
             }
@@ -440,6 +445,48 @@ class InventarioController extends Controller
     public function getConexionesModel()
     {
         return new ConexionesModel();
+    }
+
+    public function groupArray($array, $groupkey, $otrosCampoAgrupamiento = [], $nomCampDetalle = "detalle")
+    {
+        if (count($array) > 0) {
+            $otrosCampoAgrupamiento[]=$groupkey;
+            $keys = array_keys($array[0]);
+            
+            foreach ($otrosCampoAgrupamiento as $key => $keyName) {
+                $removekey = array_search($keyName, $keys);
+                if ($removekey !== false) {
+                    unset($keys[$removekey]);
+                }
+            }
+
+            $groupcriteria = array();
+            $return = array();
+            foreach ($array as $value) {
+                $item = null;
+                foreach ($keys as $key) {
+                    $item[$key] = $value[$key];
+                }
+                $busca = array_search($value[$groupkey], $groupcriteria);
+                if ($busca === false) {
+                    $groupcriteria[] = $value[$groupkey];
+                    $encabezado = [
+                        $groupkey => $value[$groupkey],
+                    ];
+                    foreach ($otrosCampoAgrupamiento as $campoGroup) {
+                        $encabezado[$campoGroup] = $value[$campoGroup];
+                    }
+                    $encabezado[$nomCampDetalle] = array();
+                    $return[] = $encabezado;
+                    $busca = count($return) - 1;
+                }
+                $return[$busca][$nomCampDetalle][] = $item;
+            }
+            return $return;
+        } else {
+            return array();
+        }
+
     }
 
 }

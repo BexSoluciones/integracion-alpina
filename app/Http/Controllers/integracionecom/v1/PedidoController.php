@@ -92,7 +92,7 @@ class PedidoController extends Controller
             $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido']."//------Vendedor:".$pedido['vendedor']."")), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
             $cadena .= '000'; //Punto de envio
-            $cadena .= str_pad('500', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
+            $cadena .= str_pad('001', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
             $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //Contacto
             $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 1
             $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 2
