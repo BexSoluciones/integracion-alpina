@@ -196,16 +196,19 @@ class PedidoController extends Controller
 
                     return response()->json([
                         'created' => false,
-                        'code' => 412,
+                        'code' => 500,
                         'errors' => "Ha ocurrido un error inesperado al crear el pedido,por favor contactarse con el administrador. Fecha de ejecucion: ".date('Y-m-d h:i:s'),
-                    ], 201);
+                    ], 500);
                     
 
                 }
 
-            } elseif ($this->existePedidoSiesa('1', 'PEM', str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-                $this->info('ya existe el pedido ' . $pedido->id_order);
-                $this->cambiarEstadoPedido($pedido->id_order, 15);
+            } elseif ($this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+                return response()->json([
+                    'created' => false,
+                    'code' => 412,
+                    'errors' => "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: ".date('Y-m-d h:i:s'),
+                ], 412);
             }
 
         }
