@@ -25,7 +25,7 @@ class PedidoController extends Controller
         if(!empty($pedidos)){
             return response()->json($pedidos, 200);
         }else{
-            return response()->json([], 404);
+            return response()->json('',404);
         }
         
 
