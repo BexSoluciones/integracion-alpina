@@ -22,7 +22,12 @@ class PedidoController extends Controller
 
         $objWebserviceSiesa = $this->getWebServiceSiesa(14);
         $pedidos = $objWebserviceSiesa->ejecutarConsulta();
-        return response()->json($pedidos, 200);
+        if(!empty($pedidos)){
+            return response()->json($pedidos, 200);
+        }else{
+            return response()->json([], 404);
+        }
+        
 
     }
 
