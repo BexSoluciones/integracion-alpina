@@ -66,11 +66,17 @@ class InventarioController extends Controller
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
+            $datosAgrupados = $this->groupArray($datos, 'consec_doc',
+            [
+                'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
+            ]
+            );
+
             $totalRegistros = $datosConteo[0]['conteo'];
             $totalPaginas = ceil($totalRegistros / $filasXpagina);
 
             $respuesta['code'] = 200;
-            $respuesta['data'] = $datos;
+            $respuesta['data'] = $datosAgrupados;
             if ($totalPaginas > 1) {
                 $respuesta['links'] = [
                     'previous' => $pagina == 1 ? null : url('/') . '/' . $rutaActual . '?page=' . $anterior,
@@ -447,46 +453,6 @@ class InventarioController extends Controller
         return new ConexionesModel();
     }
 
-    public function groupArray($array, $groupkey, $otrosCampoAgrupamiento = [], $nomCampDetalle = "detalle")
-    {
-        if (count($array) > 0) {
-            $otrosCampoAgrupamiento[]=$groupkey;
-            $keys = array_keys($array[0]);
-            
-            foreach ($otrosCampoAgrupamiento as $key => $keyName) {
-                $removekey = array_search($keyName, $keys);
-                if ($removekey !== false) {
-                    unset($keys[$removekey]);
-                }
-            }
-
-            $groupcriteria = array();
-            $return = array();
-            foreach ($array as $value) {
-                $item = null;
-                foreach ($keys as $key) {
-                    $item[$key] = $value[$key];
-                }
-                $busca = array_search($value[$groupkey], $groupcriteria);
-                if ($busca === false) {
-                    $groupcriteria[] = $value[$groupkey];
-                    $encabezado = [
-                        $groupkey => $value[$groupkey],
-                    ];
-                    foreach ($otrosCampoAgrupamiento as $campoGroup) {
-                        $encabezado[$campoGroup] = $value[$campoGroup];
-                    }
-                    $encabezado[$nomCampDetalle] = array();
-                    $return[] = $encabezado;
-                    $busca = count($return) - 1;
-                }
-                $return[$busca][$nomCampDetalle][] = $item;
-            }
-            return $return;
-        } else {
-            return array();
-        }
-
-    }
+    
 
 }

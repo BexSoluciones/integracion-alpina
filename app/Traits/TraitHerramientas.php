@@ -125,4 +125,46 @@ trait TraitHerramientas
         $d = DateTime::createFromFormat($format, $date);
         return $d && $d->format($format) == $date;
     }
+
+    public function groupArray($array, $groupkey, $otrosCampoAgrupamiento = [], $nomCampDetalle = "detalle")
+    {
+        if (count($array) > 0) {
+            $otrosCampoAgrupamiento[]=$groupkey;
+            $keys = array_keys($array[0]);
+            
+            foreach ($otrosCampoAgrupamiento as $key => $keyName) {
+                $removekey = array_search($keyName, $keys);
+                if ($removekey !== false) {
+                    unset($keys[$removekey]);
+                }
+            }
+
+            $groupcriteria = array();
+            $return = array();
+            foreach ($array as $value) {
+                $item = null;
+                foreach ($keys as $key) {
+                    $item[$key] = $value[$key];
+                }
+                $busca = array_search($value[$groupkey], $groupcriteria);
+                if ($busca === false) {
+                    $groupcriteria[] = $value[$groupkey];
+                    $encabezado = [
+                        $groupkey => $value[$groupkey],
+                    ];
+                    foreach ($otrosCampoAgrupamiento as $campoGroup) {
+                        $encabezado[$campoGroup] = $value[$campoGroup];
+                    }
+                    $encabezado[$nomCampDetalle] = array();
+                    $return[] = $encabezado;
+                    $busca = count($return) - 1;
+                }
+                $return[$busca][$nomCampDetalle][] = $item;
+            }
+            return $return;
+        } else {
+            return array();
+        }
+
+    }
 }
