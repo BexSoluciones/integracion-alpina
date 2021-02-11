@@ -22,8 +22,13 @@ class PedidoController extends Controller
 
         $objWebserviceSiesa = $this->getWebServiceSiesa(14);
         $pedidos = $objWebserviceSiesa->ejecutarConsulta();
-        if (!empty($pedidos)) {
-            return response()->json($pedidos, 200);
+        $datosAgrupados = $this->groupArray($pedidos, 'numero_pedido',
+                [
+                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido'
+                ]
+            );
+        if (!empty($datosAgrupados)) {
+            return response()->json($datosAgrupados, 200);
         } else {
             return response()->json([
                 'code' => 404,
@@ -123,6 +128,7 @@ class PedidoController extends Controller
                 $listaPrecio = $detallePedido['lista_precio'];
                 $productoSiesa = $this->obtenerCodigoProductoSiesa($detallePedido['codigo_producto']);
                 $codigoProductoSiesa = $productoSiesa[0]['codigo_producto'];
+                $vendedor=$this->obtenerVendedor($pedido['bodega'],$pedido['tipo_documento'],$pedido['centro_operacion']);
 
                 $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
                 $cadena .= '0431'; //Tipo registro
@@ -446,6 +452,13 @@ class PedidoController extends Controller
         ];
         return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);
 
+    }
+
+    public function obtenerVendedor($bodega,$tipoDoc,$centroOperacionSiesa)
+    {
+        $objBodegaTipoDo = new BodegasTiposDocModel();
+        $resp = $objBodegaTipoDo->obtenerVendedor($bodega,$tipoDoc,$centroOperacionSiesa);
+        return $resp[0]->vendedor;
     }
 
     // $tipoDoc=strtoupper($tipoDoc);
