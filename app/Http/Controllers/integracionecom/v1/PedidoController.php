@@ -22,12 +22,14 @@ class PedidoController extends Controller
 
         $objWebserviceSiesa = $this->getWebServiceSiesa(14);
         $pedidos = $objWebserviceSiesa->ejecutarConsulta();
-        if(!empty($pedidos)){
+        if (!empty($pedidos)) {
             return response()->json($pedidos, 200);
-        }else{
-            return response()->json('',404);
+        } else {
+            return response()->json([
+                'code' => 404,
+                'errors' => 'No se encontraron registros'
+            ], 404);
         }
-        
 
     }
 
@@ -94,7 +96,7 @@ class PedidoController extends Controller
             $cadena .= '00000001.0000'; //Tasa local
             $cadena .= 'C01'; //Condicion de pago
             $cadena .= '0'; //Estado de impresión del documento
-            $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido']."//------Vendedor:".$pedido['vendedor']."")), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
+            $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido'] . "//------Vendedor:" . $pedido['vendedor'] . "")), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
             $cadena .= '000'; //Punto de envio
             $cadena .= str_pad('001', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
@@ -120,8 +122,8 @@ class PedidoController extends Controller
                 //---Declarando variables
                 $listaPrecio = $detallePedido['lista_precio'];
                 $productoSiesa = $this->obtenerCodigoProductoSiesa($detallePedido['codigo_producto']);
-                $codigoProductoSiesa=$productoSiesa[0]['codigo_producto'];
-                
+                $codigoProductoSiesa = $productoSiesa[0]['codigo_producto'];
+
                 $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
                 $cadena .= '0431'; //Tipo registro
                 $cadena .= '00'; //Subtipo registro
@@ -173,8 +175,8 @@ class PedidoController extends Controller
             // Log::info($ip);
 
             if (!$this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-                
-                 $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
+
+                $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
                 if (empty($resp)) {
 
                     return response()->json([
@@ -196,15 +198,13 @@ class PedidoController extends Controller
 
                     }
 
-                    Log::info(print_r($resp->NewDataSet->Table,true));
-                    
+                    Log::info(print_r($resp->NewDataSet->Table, true));
 
                     return response()->json([
                         'created' => false,
                         'code' => 500,
-                        'errors' => "Ha ocurrido un error inesperado al crear el pedido,por favor contactarse con el administrador. Fecha de ejecucion: ".date('Y-m-d h:i:s'),
+                        'errors' => "Ha ocurrido un error inesperado al crear el pedido,por favor contactarse con el administrador. Fecha de ejecucion: " . date('Y-m-d h:i:s'),
                     ], 500);
-                    
 
                 }
 
@@ -212,7 +212,7 @@ class PedidoController extends Controller
                 return response()->json([
                     'created' => false,
                     'code' => 412,
-                    'errors' => "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: ".date('Y-m-d h:i:s'),
+                    'errors' => "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s'),
                 ], 412);
             }
 
@@ -330,7 +330,7 @@ class PedidoController extends Controller
             'nit_cliente' => 'required|digits_between:1,15',
             'sucursal_cliente' => 'required|digits_between:1,15',
             'centro_operacion' => 'required|digits_between:1,15',
-            'vendedor'=>'required',
+            'vendedor' => 'required',
             'observaciones_pedido' => 'max:2000',
         ];
 
@@ -444,7 +444,7 @@ class PedidoController extends Controller
         $parametros = [
             ['PARAMETRO1' => $productoEcom],
         ];
-        return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);       
+        return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);
 
     }
 
