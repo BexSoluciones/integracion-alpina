@@ -28,7 +28,10 @@ class PedidoController extends Controller
                 ]
             );
         if (!empty($datosAgrupados)) {
-            return response()->json($datosAgrupados, 200);
+            return response()->json([
+                'code' => 200,
+                'data' => $datosAgrupados,
+            ], 200);
         } else {
             return response()->json([
                 'code' => 404,
