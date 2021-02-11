@@ -24,7 +24,7 @@ class PedidoController extends Controller
         $pedidos = $objWebserviceSiesa->ejecutarConsulta();
         $datosAgrupados = $this->groupArray($pedidos, 'numero_pedido',
                 [
-                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido'
+                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido','centro_operacion_bodega'
                 ]
             );
         if (!empty($datosAgrupados)) {
