@@ -33,6 +33,16 @@ trait TraitHerramientas
         return $newArray;
     }
 
+    public function convertirArrayMayuscula($array){
+        
+        $newArray = [];
+        foreach ($array as $key => $value) {
+            $newArray[$key] = strtoupper($value);
+        }
+        return $newArray;
+
+    }
+
     public function quitarSaltosLinea($string)
     {
         //se normaliza saltos de linea
@@ -166,5 +176,21 @@ trait TraitHerramientas
             return array();
         }
 
+    }
+
+    public function convertirObjetosArrays($objetos)
+    {
+        $arrayValues = [];
+        $acumValues = 0;
+        foreach ($objetos as $key => $objeto) {
+            $arrayValuesRow = [];
+            foreach ($objeto as $keyb => $valores) {
+                $arrayValuesRow[(String) $keyb] = (String) $valores;
+            }
+            $arrayValues[$acumValues] = (array) $arrayValuesRow;
+            $acumValues++;
+        }
+
+        return $arrayValues;
     }
 }
