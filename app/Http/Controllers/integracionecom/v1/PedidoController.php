@@ -31,7 +31,7 @@ class PedidoController extends Controller
                     'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido','centro_operacion_bodega'
                 ]
             );
-            
+
             return response()->json([
                 'code' => 200,
                 'data' => $datosAgrupados,
