@@ -22,12 +22,16 @@ class PedidoController extends Controller
 
         $objWebserviceSiesa = $this->getWebServiceSiesa(14);
         $pedidos = $objWebserviceSiesa->ejecutarConsulta();
-        $datosAgrupados = $this->groupArray($pedidos, 'numero_pedido',
+        
+        
+        if (!empty($pedidos)) {
+
+            $datosAgrupados = $this->groupArray($pedidos, 'numero_pedido',
                 [
                     'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido','centro_operacion_bodega'
                 ]
             );
-        if (!empty($datosAgrupados)) {
+            
             return response()->json([
                 'code' => 200,
                 'data' => $datosAgrupados,
