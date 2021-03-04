@@ -210,6 +210,8 @@ class WebServiceSiesa
             $this->ConsultaSql = $this->reemplazarParametros($parametrosSql, $this->ConsultaSql,$paginacion);
         }
 
+        $this->ConsultaSql=$this->aplicarIdentificadoresSql($this->ConsultaSql);
+
         
 
         
@@ -230,6 +232,10 @@ class WebServiceSiesa
         $parm['cache_wsdl'] = '0';
 
         return $parm;
+    }
+
+    public function aplicarIdentificadoresSql($consultaSql){
+        return "SET QUOTED_IDENTIFIER OFF; \n".$consultaSql." \n SET QUOTED_IDENTIFIER ON;";
     }
 
     public function getParamXml($consultaSql)
@@ -286,10 +292,7 @@ class WebServiceSiesa
         }else{
             $nuevaConsultaSql = str_replace('**paginacion**','', $nuevaConsultaSql);
         }
-        
-        
-        $nuevaConsultaSql="SET QUOTED_IDENTIFIER OFF; \n".$nuevaConsultaSql." \n SET QUOTED_IDENTIFIER ON;";
-        // Log::info($nuevaConsultaSql);
+    
         return $nuevaConsultaSql;
 
     }
