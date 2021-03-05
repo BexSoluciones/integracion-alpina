@@ -33,15 +33,15 @@ class ClienteController extends Controller
 
         $datosCliente=$this->convertirArrayMayuscula($this->decodificarArray($request->input('data.0')));
 
-        // $respTerceroSiesa=$this->crearTerceroSiesa($datosCliente);
+        $respTerceroSiesa=$this->crearTerceroSiesa($datosCliente);
 
-        // if($respTerceroSiesa['created']===false){
-        //     return response()->json([
-        //         'created' => false,
-        //         'code' => 412,
-        //         'errors' =>$respTerceroSiesa['errors'] ,
-        //     ], 412);
-        // }
+        if($respTerceroSiesa['created']===false){
+            return response()->json([
+                'created' => false,
+                'code' => 412,
+                'errors' =>$respTerceroSiesa['errors'] ,
+            ], 412);
+        }
 
         $respClienteSiesa=$this->crearClienteSiesa($datosCliente);
 
