@@ -143,7 +143,7 @@ class ClienteController extends Controller
         $cadena .= '1'; //Estado del cliente
         $cadena .= str_pad($data['nombre_contacto'], 40, " ", STR_PAD_RIGHT); //Razón social del cliente
         $cadena .= 'COP'; //Moneda
-        $cadena .= '000'; //Codigo del vendedor
+        $cadena .= str_pad('000', 4, " ", STR_PAD_RIGHT);; //Codigo del vendedor
         $cadena .= 'A'; //Clasificacion
         $cadena .= 'C01'; //Condicion de pago
         $cadena .= str_pad(2, 3, " ", STR_PAD_LEFT); //Días de gracia
