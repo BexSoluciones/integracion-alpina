@@ -45,6 +45,20 @@ class ClienteController extends Controller
 
         $respClienteSiesa=$this->crearClienteSiesa($datosCliente);
 
+        if($respClienteSiesa['created']===false){
+            return response()->json([
+                'created' => false,
+                'code' => 412,
+                'errors' =>$respTerceroSiesa['errors'] ,
+            ], 412);
+        }
+
+
+        $respImpuestoClienteSiesa=$this->crearImpuestoCliente($datosCliente);
+        
+
+
+
         dd('termino proceso');
 
     }
@@ -124,76 +138,7 @@ class ClienteController extends Controller
 
     }
 
-    public function crearClienteSiesa($data){
-
-       
-        
-        $cadena = "";
-        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
-
-        $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
-        $cadena .= str_pad('0201', 4, "0", STR_PAD_LEFT); //Tipo de registro
-        $cadena .= '00'; //Subtipo de registro
-        $cadena .= '01'; //version del tipo de registro
-        $cadena .= '001'; //Compañia
-        $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
-        $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente
-        
-        $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
-        $cadena .= '1'; //Estado del cliente
-        $cadena .= str_pad($data['nombre_contacto'], 40, " ", STR_PAD_RIGHT); //Razón social del cliente
-        $cadena .= 'COP'; //Moneda
-        $cadena .= str_pad('000', 4, " ", STR_PAD_RIGHT);; //Codigo del vendedor
-        $cadena .= 'A'; //Clasificacion
-        $cadena .= 'C01'; //Condicion de pago
-        $cadena .= str_pad(2, 3, " ", STR_PAD_LEFT); //Días de gracia
-        $cadena .= '+000000002000000.0000';//Cupo de credito
-        $cadena .= '0001';//Tipo de cliente
-        $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Grupo de descuento
-        $cadena .= '001'; //Lista de precios
-        $cadena .= '0'; //Indicador de backorder
-        $cadena .= '9999.99'; //Porcentaje para poder vender por encima de lo pedido
-        $cadena .= '0000.00'; //Porcentaje de margen mínimo
-        $cadena .= '0000.00'; //Porcentaje de margen máximo
-        $cadena .= '0'; //Indicador de bloquea por cupo
-        $cadena .= '0'; //Indicador de bloquea por mora
-        $cadena .= '0'; //Indicador de factura unificada
-        $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Centro de operación por defecto para facturación
-        $cadena .= str_pad('ECOM UNILEVER', 255, " ", STR_PAD_RIGHT); //Observaciones
-        $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //contacto
-        $cadena .= str_pad($data['direccion'], 40, " ", STR_PAD_RIGHT); //direccion1
-        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion2
-        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion3
-        $cadena .= '169'; //Pais
-        $cadena .= $data['codigo_ciudad']; //Departamento - ciudad -> aca van las dos al tiempo
-        $cadena .= str_pad($data['barrio'], 40, " ", STR_PAD_RIGHT); //Barrio
-        $cadena .= str_pad($data['telefono'], 20, " ", STR_PAD_RIGHT); //Telefono
-        $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //Fax
-        $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Codigo postal
-        $cadena .= str_pad('factura720@gmail.com', 50, " ", STR_PAD_RIGHT); //Direccion de correo electrónico
-        $cadena .= "\n";
-        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
-
-        $lineas = explode("\n", $cadena);
-
-        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
-        
-        $xml=$this->crearXml('pandapan/clientes/xml/',$nombreArchivo,$lineas);
-        $respImport=$this->importarXml($xml);
-
-        if($respImport['created']===true){
-            return [
-                'created' => true,
-                'errors' => 0,
-            ];
-        }elseif($respImport['created']===false){
-            return [
-                'created' => false,
-                'errors' => $respValidacion['errors'],
-            ];
-        }
-
-    }
+    
 
     public function crearTerceroSiesa($data){
 
@@ -262,6 +207,138 @@ class ClienteController extends Controller
 
     }
 
+    public function crearClienteSiesa($data){
+
+       
+        
+        $cadena = "";
+        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
+
+        $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
+        $cadena .= str_pad('0201', 4, "0", STR_PAD_LEFT); //Tipo de registro
+        $cadena .= '00'; //Subtipo de registro
+        $cadena .= '01'; //version del tipo de registro
+        $cadena .= '001'; //Compañia
+        $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+        $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente
+        
+        $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+        $cadena .= '1'; //Estado del cliente
+        $cadena .= str_pad($data['nombre_contacto'], 40, " ", STR_PAD_RIGHT); //Razón social del cliente
+        $cadena .= 'COP'; //Moneda
+        $cadena .= str_pad('000', 4, " ", STR_PAD_RIGHT);; //Codigo del vendedor
+        $cadena .= 'A'; //Clasificacion
+        $cadena .= 'C01'; //Condicion de pago
+        $cadena .= str_pad(2, 3, " ", STR_PAD_LEFT); //Días de gracia
+        $cadena .= '+000000002000000.0000';//Cupo de credito
+        $cadena .= '0001';//Tipo de cliente
+        $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Grupo de descuento
+        $cadena .= '001'; //Lista de precios
+        $cadena .= '0'; //Indicador de backorder
+        $cadena .= '9999.99'; //Porcentaje para poder vender por encima de lo pedido
+        $cadena .= '0000.00'; //Porcentaje de margen mínimo
+        $cadena .= '0000.00'; //Porcentaje de margen máximo
+        $cadena .= '0'; //Indicador de bloquea por cupo
+        $cadena .= '0'; //Indicador de bloquea por mora
+        $cadena .= '0'; //Indicador de factura unificada
+        $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Centro de operación por defecto para facturación
+        $cadena .= str_pad('ECOM UNILEVER', 255, " ", STR_PAD_RIGHT); //Observaciones
+        $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //contacto
+        $cadena .= str_pad($data['direccion'], 40, " ", STR_PAD_RIGHT); //direccion1
+        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion2
+        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion3
+        $cadena .= '169'; //Pais
+        $cadena .= $data['codigo_ciudad']; //Departamento - ciudad -> aca van las dos al tiempo
+        $cadena .= str_pad($data['barrio'], 40, " ", STR_PAD_RIGHT); //Barrio
+        $cadena .= str_pad($data['telefono'], 20, " ", STR_PAD_RIGHT); //Telefono
+        $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //Fax
+        $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Codigo postal
+        $cadena .= str_pad('factura720@gmail.com', 50, " ", STR_PAD_RIGHT); //Direccion de correo electrónico
+        $cadena .= "\n";
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
+
+        $lineas = explode("\n", $cadena);
+
+        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
+        
+        $xml=$this->crearXml('pandapan/clientes/xml/',$nombreArchivo,$lineas);
+        $respImport=$this->importarXml($xml);
+
+        print_r($respImport);
+
+        if($respImport['created']===true){
+            return [
+                'created' => true,
+                'errors' => 0,
+            ];
+        }elseif($respImport['created']===false){
+            return [
+                'created' => false,
+                'errors' => $respValidacion['errors'],
+            ];
+        }
+
+    }
+
+    public function crearImpuestoCliente($data){
+
+        $cadena = "";
+        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
+
+        $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
+        $cadena .= str_pad('0046', 4, "0", STR_PAD_LEFT); //Tipo de registro
+        $cadena .= '00'; //Subtipo de registro
+        $cadena .= '01'; //version del tipo de registro
+        $cadena .= '001'; //Compañia
+        $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+        $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
+        $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+        $cadena .= '001'; //Código de la clase de impuesto / retención
+        $cadena .= '01'; //Configuracion del tercero respecto al impuesto / retención
+        $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
+        $cadena .= "\n";
+
+        if($data['tipo_identificacion']=='N'){
+
+            $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT); //Numero de registros
+            $cadena .= str_pad('0047', 4, "0", STR_PAD_LEFT); //Tipo de registro
+            $cadena .= '00'; //Subtipo de registro
+            $cadena .= '01'; //version del tipo de registro
+            $cadena .= '001'; //Compañia
+            $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+            $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
+            $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+            $cadena .= '001'; //Código de la clase de impuesto / retención
+            $cadena .= '01'; //Configuracion del tercero respecto al impuesto / retención
+            $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
+            $cadena .= "\n";
+
+        }
+        
+        
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
+
+        $lineas = explode("\n", $cadena);
+
+        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
+        
+        $xml=$this->crearXml('pandapan/impuestos_cliente/xml/',$nombreArchivo,$lineas);
+        $respImport=$this->importarXml($xml);
+
+        if($respImport['created']===true){
+            return [
+                'created' => true,
+                'errors' => 0,
+            ];
+        }elseif($respImport['created']===false){
+            return [
+                'created' => false,
+                'errors' => $respValidacion['errors'],
+            ];
+        }
+
+    }
+
     public function crearArchivoTxt($directorio,$nombreArchivo,$cadena){
 
         Storage::disk('local')->put($directorio . $nombreArchivo, $cadena);
@@ -300,8 +377,6 @@ class ClienteController extends Controller
 
         $resp = $this->getWebServiceSiesa(35)->importarXml($xml);
 
-        Log::info("========aca entra este pirobo=====");
-        Log::info($resp->NewDataSet->Table);
                 if (empty($resp)) {
                     $transaccionExitosa=true;
                     return [
