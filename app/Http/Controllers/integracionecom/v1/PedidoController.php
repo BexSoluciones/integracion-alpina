@@ -28,7 +28,7 @@ class PedidoController extends Controller
 
             $datosAgrupados = $this->groupArray($pedidos, 'numero_pedido',
                 [
-                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido','centro_operacion_bodega'
+                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido','centro_operacion_bodega','tipo_doc_remision','doc_remision'
                 ]
             );
 
