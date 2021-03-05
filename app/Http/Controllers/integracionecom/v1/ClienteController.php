@@ -282,6 +282,7 @@ class ClienteController extends Controller
 
     public function crearImpuestoCliente($data){
 
+        $numRegistro=3;
         $cadena = "";
         $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
 
@@ -297,10 +298,10 @@ class ClienteController extends Controller
         $cadena .= '01'; //Configuracion del tercero respecto al impuesto / retención
         $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
         $cadena .= "\n";
-
+        
         if($data['tipo_identificacion']=='N'){
 
-            $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT); //Numero de registros
+            $cadena .= str_pad($numRegistro, 7, "0", STR_PAD_LEFT); //Numero de registros
             $cadena .= str_pad('0047', 4, "0", STR_PAD_LEFT); //Tipo de registro
             $cadena .= '00'; //Subtipo de registro
             $cadena .= '01'; //version del tipo de registro
@@ -313,14 +314,15 @@ class ClienteController extends Controller
             $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
             $cadena .= "\n";
 
+            $numRegistro=$numRegistro+1;
         }
         
         
-        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
+        $cadena .= str_pad($numRegistro, 7, "0", STR_PAD_LEFT)."99990001001";
 
         $lineas = explode("\n", $cadena);
 
-        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
+        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.xml';
         
         $xml=$this->crearXml('pandapan/impuestos_cliente/xml/',$nombreArchivo,$lineas);
         $respImport=$this->importarXml($xml);
