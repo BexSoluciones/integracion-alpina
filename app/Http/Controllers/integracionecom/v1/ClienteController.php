@@ -33,15 +33,17 @@ class ClienteController extends Controller
 
         $datosCliente=$this->convertirArrayMayuscula($this->decodificarArray($request->input('data.0')));
 
-        $respTerceroSiesa=$this->crearTerceroSiesa($datosCliente);
+        // $respTerceroSiesa=$this->crearTerceroSiesa($datosCliente);
 
-        if($respTerceroSiesa['created']===false){
-            return response()->json([
-                'created' => false,
-                'code' => 412,
-                'errors' =>$respTerceroSiesa['errors'] ,
-            ], 412);
-        }
+        // if($respTerceroSiesa['created']===false){
+        //     return response()->json([
+        //         'created' => false,
+        //         'code' => 412,
+        //         'errors' =>$respTerceroSiesa['errors'] ,
+        //     ], 412);
+        // }
+
+        $respClienteSiesa=$this->crearClienteSiesa($datosCliente);
 
         dd('termino proceso');
 
@@ -124,6 +126,73 @@ class ClienteController extends Controller
 
     public function crearClienteSiesa($data){
 
+       
+        
+        $cadena = "";
+        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
+
+        $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
+        $cadena .= str_pad('0201', 4, "0", STR_PAD_LEFT); //Tipo de registro
+        $cadena .= '00'; //Subtipo de registro
+        $cadena .= '01'; //version del tipo de registro
+        $cadena .= '001'; //Compañia
+        $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+        $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente
+        
+        $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+        $cadena .= '1'; //Estado del cliente
+        $cadena .= str_pad($data['nombre_contacto'], 40, " ", STR_PAD_RIGHT); //Razón social del cliente
+        $cadena .= 'COP'; //Moneda
+        $cadena .= '000'; //Codigo del vendedor
+        $cadena .= 'A'; //Clasificacion
+        $cadena .= 'C01'; //Condicion de pago
+        $cadena .= str_pad(2, 3, " ", STR_PAD_LEFT); //Días de gracia
+        $cadena .= '+000000002000000.0000';//Cupo de credito
+        $cadena .= '0001';//Tipo de cliente
+        $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Grupo de descuento
+        $cadena .= '001'; //Lista de precios
+        $cadena .= '0'; //Indicador de backorder
+        $cadena .= '9999.99'; //Porcentaje para poder vender por encima de lo pedido
+        $cadena .= '0000.00'; //Porcentaje de margen mínimo
+        $cadena .= '0000.00'; //Porcentaje de margen máximo
+        $cadena .= '0'; //Indicador de bloquea por cupo
+        $cadena .= '0'; //Indicador de bloquea por mora
+        $cadena .= '0'; //Indicador de factura unificada
+        $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Centro de operación por defecto para facturación
+        $cadena .= str_pad('ECOM UNILEVER', 255, " ", STR_PAD_RIGHT); //Observaciones
+        $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //contacto
+        $cadena .= str_pad($data['direccion'], 40, " ", STR_PAD_RIGHT); //direccion1
+        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion2
+        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion3
+        $cadena .= '169'; //Pais
+        $cadena .= $data['codigo_ciudad']; //Departamento - ciudad -> aca van las dos al tiempo
+        $cadena .= str_pad($data['barrio'], 40, " ", STR_PAD_RIGHT); //Barrio
+        $cadena .= str_pad($data['telefono'], 20, " ", STR_PAD_RIGHT); //Telefono
+        $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT); //Fax
+        $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Codigo postal
+        $cadena .= str_pad('factura720@gmail.com', 50, " ", STR_PAD_RIGHT); //Direccion de correo electrónico
+        $cadena .= "\n";
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
+
+        $lineas = explode("\n", $cadena);
+
+        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
+        
+        $xml=$this->crearXml('pandapan/clientes/xml/',$nombreArchivo,$lineas);
+        $respImport=$this->importarXml($xml);
+
+        if($respImport['created']===true){
+            return [
+                'created' => true,
+                'errors' => 0,
+            ];
+        }elseif($respImport['created']===false){
+            return [
+                'created' => false,
+                'errors' => $respValidacion['errors'],
+            ];
+        }
+
     }
 
     public function crearTerceroSiesa($data){
@@ -148,9 +217,9 @@ class ClienteController extends Controller
         $cadena .= $data['tipo_identificacion']; //Tipo de identificación
         $cadena .= $data['tipo_identificacion']=='C'?'1':'2'; //Tipo de tercero
         $cadena .= str_pad($razonSocial, 50, " ", STR_PAD_RIGHT);; //Razón social
-        $cadena .= str_pad($data['apellido_1'], 15, " ", STR_PAD_RIGHT); //Apellido 1
-        $cadena .= str_pad($data['apellido_2'], 15, " ", STR_PAD_RIGHT); //Apellido 2
-        $cadena .= str_pad($data['nombres'], 20, " ", STR_PAD_RIGHT); //Nombres
+        $cadena .= str_pad($apellido1, 15, " ", STR_PAD_RIGHT); //Apellido 1
+        $cadena .= str_pad($apellido2, 15, " ", STR_PAD_RIGHT); //Apellido 2
+        $cadena .= str_pad($nombres, 20, " ", STR_PAD_RIGHT); //Nombres
         $cadena .= str_pad($data['nombre_establecimiento'], 50, " ", STR_PAD_RIGHT); //Nombre establecimiento
         $cadena .= '1'; //Indicador de tercero cliente
         $cadena .= '1'; //Indicador de tercero proveedor
@@ -176,7 +245,7 @@ class ClienteController extends Controller
 
         $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
         
-        $xml=$this->crearXml($nombreArchivo,$lineas);
+        $xml=$this->crearXml('pandapan/terceros/xml/',$nombreArchivo,$lineas);
         $respImport=$this->importarXml($xml);
 
         if($respImport['created']===true){
@@ -193,13 +262,13 @@ class ClienteController extends Controller
 
     }
 
-    public function crearArchivoTxt($nombreArchivo,$cadena){
+    public function crearArchivoTxt($directorio,$nombreArchivo,$cadena){
 
-        Storage::disk('local')->put('pandapan/terceros/txt/' . $nombreArchivo, $cadena);
+        Storage::disk('local')->put($directorio . $nombreArchivo, $cadena);
 
     }
 
-    public function crearXml($nombreArchivo,$lineas){
+    public function crearXml($directorio,$nombreArchivo,$lineas){
 
     
         $datosConexionSiesa = $this->getConexionesModel()->getConexionXid(35);
@@ -220,7 +289,7 @@ class ClienteController extends Controller
         </Importar>";
 
         
-        Storage::disk('local')->put('pandapan/terceros/xml/' . $nombreArchivo, $xmlPedido);
+        Storage::disk('local')->put($directorio . $nombreArchivo, $xmlPedido);
 
         return $datos;
 
