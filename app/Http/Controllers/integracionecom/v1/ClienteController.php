@@ -64,6 +64,12 @@ class ClienteController extends Controller
             ], 412);
         }
 
+        return response()->json([
+            'created' => false,
+            'code' => 201,
+            'errors' =>0,
+        ], 201);
+
     }
 
     public function validarEstructuraJson($request)
