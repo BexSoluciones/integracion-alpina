@@ -243,7 +243,7 @@ class ClienteController extends Controller
         $cadena .= '0'; //Indicador de factura unificada
         $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Centro de operación por defecto para facturación
         $cadena .= str_pad('ECOM UNILEVER', 255, " ", STR_PAD_RIGHT); //Observaciones
-        $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //contacto
+        $cadena .= str_pad($data['nombre_contacto'], 50, " ", STR_PAD_RIGHT); //contacto
         $cadena .= str_pad($data['direccion'], 40, " ", STR_PAD_RIGHT); //direccion1
         $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion2
         $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion3
