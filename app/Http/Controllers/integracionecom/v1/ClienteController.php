@@ -49,17 +49,20 @@ class ClienteController extends Controller
             return response()->json([
                 'created' => false,
                 'code' => 412,
-                'errors' =>$respTerceroSiesa['errors'] ,
+                'errors' =>$respClienteSiesa['errors'] ,
             ], 412);
         }
 
 
         $respImpuestoClienteSiesa=$this->crearImpuestoCliente($datosCliente);
         
-
-
-
-        dd('termino proceso');
+        if($respImpuestoClienteSiesa['created']===false){
+            return response()->json([
+                'created' => false,
+                'code' => 412,
+                'errors' =>$respImpuestoClienteSiesa['errors'] ,
+            ], 412);
+        }
 
     }
 
@@ -201,7 +204,7 @@ class ClienteController extends Controller
         }elseif($respImport['created']===false){
             return [
                 'created' => false,
-                'errors' => $respValidacion['errors'],
+                'errors' => $respImport['errors'],
             ];
         }
 
@@ -209,7 +212,6 @@ class ClienteController extends Controller
 
     public function crearClienteSiesa($data){
 
-       
         
         $cadena = "";
         $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
@@ -264,8 +266,7 @@ class ClienteController extends Controller
         $xml=$this->crearXml('pandapan/clientes/xml/',$nombreArchivo,$lineas);
         $respImport=$this->importarXml($xml);
 
-        print_r($respImport);
-
+        
         if($respImport['created']===true){
             return [
                 'created' => true,
@@ -274,7 +275,7 @@ class ClienteController extends Controller
         }elseif($respImport['created']===false){
             return [
                 'created' => false,
-                'errors' => $respValidacion['errors'],
+                'errors' => $respImport['errors'],
             ];
         }
 
@@ -335,7 +336,7 @@ class ClienteController extends Controller
         }elseif($respImport['created']===false){
             return [
                 'created' => false,
-                'errors' => $respValidacion['errors'],
+                'errors' => $respImport['errors'],
             ];
         }
 
@@ -378,7 +379,7 @@ class ClienteController extends Controller
     public function importarXml($xml){        
 
         $resp = $this->getWebServiceSiesa(35)->importarXml($xml);
-
+// Log::info(print_r($resp,true));
                 if (empty($resp)) {
                     $transaccionExitosa=true;
                     return [
@@ -388,7 +389,7 @@ class ClienteController extends Controller
                 } else {
 
                     return [
-                        'created'=>true,
+                        'created'=>false,
                         'errors'=>$this->convertirObjetosArrays($resp->NewDataSet->Table)
                     ];                    
 
