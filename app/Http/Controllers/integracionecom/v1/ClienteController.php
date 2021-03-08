@@ -118,7 +118,7 @@ class ClienteController extends Controller
         if($datos['tipo_identificacion'] =='C'){
             $rules['nombres']='required|max:20';
             $rules['apellido_1']='required|max:15';
-            $rules['apellido_2']='required|max:15';
+            $rules['apellido_2']='max:15';
         }elseif($datos['tipo_identificacion'] =='N'){
             $rules['razon_social']='required|max:50';
         }       
