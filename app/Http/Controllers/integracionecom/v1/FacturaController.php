@@ -413,6 +413,8 @@ class FacturaController extends Controller
             'tipo_documento_remision' => 'required',
             'numero_documento_remision' => 'required',
             'bodega' => 'required|digits_between:1,5',
+            'centro_operacion' => 'required|digits_between:1,3',
+            'lista_precio'=>'required|max:3'
         ];
 
         if($datosEncFactura['medio_pago'] =='CG1'){
@@ -541,3 +543,35 @@ class FacturaController extends Controller
     }
     
 }
+
+
+// {
+//     "data":[
+//         {
+//             "tipo_documento":"EUY",
+//             "numero_factura":"",
+//             "fecha_factura":"",
+//             "nit":"",
+//             "sucursal_cliente":"",            
+//             "nombre_vendedor":"",  
+//             "medio_pago":"CG1",                 
+//             "valor_medio_pago":"",                 
+//             "referencia_medio_pago":"",   
+//             "fecha_consignacion_cheque":"", 
+//             "tipo_documento_remision":"",
+//             "numero_documento_remision":"",   
+//             "bodega":"00111",    
+//             "centro_operacion":"",   
+//             "lista_precio":"B2B", 
+//             "detalle_factura":[
+//                     {
+//                         "codigo_producto": "",                              
+//                         "cantidad":2,
+//                         "valor_bruto": 8116
+//                     }
+                   
+//             ]
+
+//         }
+//     ]
+// }
