@@ -31,6 +31,18 @@ class BodegasTiposDocModel extends Model
         
     }
 
+    public function validarTipoDocumentoFactura($tipoDocFactura,$bodega){
+
+        $datos=$this->where('bodega_siesa','=',$bodega)->where('tipo_documento_factura','=',$tipoDocFactura)->get();
+
+        if(count($datos)>0){
+            return true;
+        }else{
+            return false;
+        }
+        
+    }
+
     public function obtenerVendedor($bodega,$tipoDoc,$centroOperacionSiesa){
         $datos=$this->where('bodega_siesa','=',$bodega)
                     ->where('tipo_documento_siesa','=',$tipoDoc)

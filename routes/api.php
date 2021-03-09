@@ -35,5 +35,6 @@ Route::group([
         Route::get('integracionecom/v1/compras-devolucion-compras', 'integracionecom\v1\CompraDevolucionCompraController@getComprasDevolucionesCompra');
         Route::get('integracionecom/v1/inventarios', 'integracionecom\v1\InventarioController@getInventario');
         Route::post('integracionecom/v1/clientes', 'integracionecom\v1\ClienteController@saveCliente');
+        Route::post('integracionecom/v1/facturas', 'integracionecom\v1\FacturaController@subirFacturaSiesa');
     });
 });
