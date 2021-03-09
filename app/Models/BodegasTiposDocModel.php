@@ -54,4 +54,16 @@ class BodegasTiposDocModel extends Model
             return null;
         }
     }
+
+    public function obtenerVendedorFactura($bodega,$tipoDocFactura,$centroOperacionSiesa){
+        $datos=$this->where('bodega_siesa','=',$bodega)
+                    ->where('tipo_documento_factura','=',$tipoDocFactura)
+                    ->where('centro_operacion_siesa','=',$centroOperacionSiesa)->get();
+
+        if(count($datos)>0){
+            return $datos;
+        }else{
+            return null;
+        }
+    }
 }

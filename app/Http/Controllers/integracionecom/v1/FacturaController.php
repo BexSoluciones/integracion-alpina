@@ -51,6 +51,17 @@ class FacturaController extends Controller
 
             //-------- Encabezado factura
 
+            $vendedorFactura=$this->obtenerVendedorFactura($factura['bodega'],$factura['tipo_documento'],$factura['centro_operacion']);
+            if (empty($vendedorFactura)) {
+
+                return response()->json([
+                    'created' => false,
+                    'code' => 412,
+                    'errors' => 'No existe vendedor para la bodega '.$factura['bodega'].' tipo documento factura '.$factura['tipo_documento'].' centro de operacion '.$factura['centro_operacion']
+                ], 412);
+    
+            }
+
             $cadena = "";
             $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
 
@@ -72,14 +83,11 @@ class FacturaController extends Controller
             $cadena .= '1'; //Estado de impresión del documento
             $cadena .= $factura['sucursal_cliente']; //Sucursal cliente a facturar
             $cadena .= '0001'; //Tipo de cliente
-            $cadena .= '001'; //Centro de operación de la factura
-            $cadena .= $factura['sucursal_cliente']; //Sucursal cliente a despachar
-            $cadena .= $factura['tipo_cliente']; //Tipo de cliente
             $cadena .= $factura['centro_operacion']; //Centro de operacion de la factura
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Cliente de contado
             $cadena .= str_pad($factura['nit'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a remisionar
             $cadena .= $factura['sucursal_cliente'];//Sucursal cliente a remisionar
-            $cadena .= $this->obtenerVendedor($factura['bodega'],$factura['tipo_documento'],$factura['centro_operacion']); //Tercero vendedor
+            $cadena .=  str_pad($vendedorFactura, 15, " ",STR_PAD_LEFT);//Tercero vendedor
             $cadena .= str_pad($factura['numero_factura'], 10, "0", STR_PAD_LEFT); //Referencia del documento
             $cadena .= str_pad('', 12, " ", STR_PAD_RIGHT); //Numero orden de compra
             $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Numero de cargue
@@ -178,8 +186,8 @@ class FacturaController extends Controller
                 $listaPrecio = $detalleFactura['lista_precio'];
                 $productoSiesa = $this->obtenerCodigoProductoSiesa($detalleFactura['codigo_producto']);
                 $codigoProductoSiesa = $productoSiesa[0]['codigo_producto'];
-                $vendedor=$this->obtenerVendedor($factura['bodega'],$factura['tipo_documento'],$factura['centro_operacion']);
-
+                
+                
                 $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
                 $cadena .= '0470'; //Tipo registro
                 $cadena .= '01'; //Subtipo registro
@@ -228,52 +236,23 @@ class FacturaController extends Controller
 
             $nombreArchivo = str_pad($factura['numero_factura'], 15, "0", STR_PAD_LEFT) . '.txt';
             Storage::disk('local')->put('pandapan/facturas/txt/' . $nombreArchivo, $cadena);
-            $xmlPedido = $this->crearXmlPedido($lineas, $factura['numero_pedido']);
+            $xmlFactura = $this->crearXmlFactura($lineas, $factura['numero_factura']);
 
             // $ip = $this->getIpCliente();
             // Log::info($ip);
 
-            if (!$this->existePedidoSiesa('1', $factura['tipo_documento'], str_pad($factura['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-
-                $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
-                if (empty($resp)) {
-
-                    return response()->json([
-                        'created' => true,
-                        'code' => 201,
-                        'errors' => $respValidacion['errors'],
-                    ], 201);
-                    // $this->cambiarEstadoPedido($factura->id_order, 15);
-                    // $this->info('todo ok');
-                } else {
-                    //  $resp;
-                    $mensaje = "";
-                    foreach ($resp->NewDataSet->Table as $key => $errores) {
-
-                        $mensaje .= "error $key ->";
-                        foreach ($errores as $key => $detalleError) {
-                            $mensaje .= '***' . $key . '=>' . $detalleError;
-                        }
-
-                    }
-
-                    Log::info(print_r($resp->NewDataSet->Table, true));
-
-                    return response()->json([
-                        'created' => false,
-                        'code' => 500,
-                        'errors' => "Ha ocurrido un error inesperado al crear el pedido,por favor contactarse con el administrador. Fecha de ejecucion: " . date('Y-m-d h:i:s'),
-                    ], 500);
-
-                }
-
-            } elseif ($this->existePedidoSiesa('1', $factura['tipo_documento'], str_pad($factura['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+            
+            $respImport=$this->importarXml($xmlFactura);
+            
+            if($respImport['created']===false){
                 return response()->json([
                     'created' => false,
                     'code' => 412,
-                    'errors' => "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s'),
+                    'errors' =>$respImport['errors'] ,
                 ], 412);
             }
+
+           
 
         }
 
@@ -285,7 +264,7 @@ class FacturaController extends Controller
 
     }
 
-    public function crearXmlPedido($lineas, $idOrder)
+    public function crearXmlFactura($lineas, $idOrder)
     {
 
         $datosConexionSiesa = $this->getConexionesModel()->getConexionXid(14);
@@ -310,6 +289,28 @@ class FacturaController extends Controller
 
         return $datos;
 
+    }
+
+    public function importarXml($xml){        
+
+        $resp = $this->getWebServiceSiesa(36)->importarXml($xml);
+// Log::info(print_r($resp,true));
+                if (empty($resp)) {
+                    $transaccionExitosa=true;
+                    return [
+                        'created'=>true,
+                        'errors'=>0
+                    ];
+                } else {
+
+                    return [
+                        'created'=>false,
+                        'errors'=>$this->convertirObjetosArrays($resp->NewDataSet->Table)
+                    ];                    
+
+                }
+
+               
     }
 
     public function validarEstructuraJson($request)
@@ -414,7 +415,7 @@ class FacturaController extends Controller
             'numero_documento_remision' => 'required',
             'bodega' => 'required|digits_between:1,5',
             'centro_operacion' => 'required|digits_between:1,3',
-            'lista_precio'=>'required|max:3'
+            
         ];
 
         if($datosEncFactura['medio_pago'] =='CG1'){
@@ -453,6 +454,7 @@ class FacturaController extends Controller
             'codigo_producto' => 'required',
             'cantidad' => 'required|digits_between:1,15',
             'valor_bruto' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
+            'lista_precio'=>'required|max:3'
         ];
 
         $validator = Validator::make($datosDetallePedido, $rules);
@@ -535,11 +537,17 @@ class FacturaController extends Controller
 
     }
 
-    public function obtenerVendedor($bodega,$tipoDoc,$centroOperacionSiesa)
+    public function obtenerVendedorFactura($bodega,$tipoDoc,$centroOperacionSiesa)
     {
         $objBodegaTipoDo = new BodegasTiposDocModel();
-        $resp = $objBodegaTipoDo->obtenerVendedor($bodega,$tipoDoc,$centroOperacionSiesa);
-        return $resp[0]->vendedor;
+        $resp = $objBodegaTipoDo->obtenerVendedorFactura($bodega,$tipoDoc,$centroOperacionSiesa);
+        if(!empty($resp)){
+            return $resp[0]->vendedor;
+        }else{
+            Log::error("No existe vendedor para bodega = ".$bodega." tipo documento factura = ".$tipoDoc." centro de operacion = ".$centroOperacionSies);
+            return null;
+        }
+        
     }
     
 }
@@ -561,11 +569,11 @@ class FacturaController extends Controller
 //             "tipo_documento_remision":"",
 //             "numero_documento_remision":"",   
 //             "bodega":"00111",    
-//             "centro_operacion":"",   
-//             "lista_precio":"B2B", 
+//             "centro_operacion":"",    
 //             "detalle_factura":[
 //                     {
-//                         "codigo_producto": "",                              
+//                         "codigo_producto": "",
+//                          "lista_precio":"B2B",                              
 //                         "cantidad":2,
 //                         "valor_bruto": 8116
 //                     }
