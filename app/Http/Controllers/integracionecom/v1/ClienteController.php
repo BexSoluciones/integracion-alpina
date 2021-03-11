@@ -450,17 +450,19 @@ class ClienteController extends Controller
 // {
 //     "data":[
 //         {
-//             "tipo_identificacion": "",
-//             "nit": "",
-//             "sucursal": "",
-//             "razon_social":"",
-//             "nombre_establecimiento":"",
-//             "direccion": "",
-//             "nombre_contacto": "",
-//             "departamento": "",
-//             "ciudad": "",
-//             "barrio": "",
-//             "telefono":""          
+//             "tipo_identificacion": "C",
+//             "nit": "1152197046",
+//             "sucursal": "002",
+//             "razon_social":"Robledo bajo supermercado",
+//             "nombre_establecimiento":"Supermercado Meli sucursal 2",
+//             "nombres": "Melissa",
+//             "apellido_1": "Gil",
+//             "apellido_2": "Montenegro",
+//             "direccion": "Calle 12",
+//             "nombre_contacto": "Melissa Gil Montenegro",
+//             "codigo_ciudad": "05001",
+//             "barrio": "Robledo",
+//             "telefono":"65443"          
             
 //         }
 //     ]
