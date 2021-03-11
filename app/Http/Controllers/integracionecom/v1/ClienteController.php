@@ -288,8 +288,8 @@ class ClienteController extends Controller
     }
 
     public function crearImpuestoCliente($data){
-
-        $numRegistro=3;
+        //Asignar impuestos IVA
+        //$numRegistro=3;
         $cadena = "";
         $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
 
@@ -306,26 +306,29 @@ class ClienteController extends Controller
         $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
         $cadena .= "\n";
         
+        //Asignar impuestos RETENCION
+
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT); //Numero de registros
+        $cadena .= str_pad('0047', 4, "0", STR_PAD_LEFT); //Tipo de registro
+        $cadena .= '00'; //Subtipo de registro
+        $cadena .= '01'; //version del tipo de registro
+        $cadena .= '001'; //Compañia
+        $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+        $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
+        $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+        $cadena .= '001'; //Código de la clase de impuesto / retención
         if($data['tipo_identificacion']=='N'){
-
-            $cadena .= str_pad($numRegistro, 7, "0", STR_PAD_LEFT); //Numero de registros
-            $cadena .= str_pad('0047', 4, "0", STR_PAD_LEFT); //Tipo de registro
-            $cadena .= '00'; //Subtipo de registro
-            $cadena .= '01'; //version del tipo de registro
-            $cadena .= '001'; //Compañia
-            $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
-            $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
-            $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
-            $cadena .= '001'; //Código de la clase de impuesto / retención
             $cadena .= '01'; //Configuracion del tercero respecto al impuesto / retención
-            $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
-            $cadena .= "\n";
-
-            $numRegistro=$numRegistro+1;
+        }elseif ($data['tipo_identificacion']=='C') {
+            $cadena .= '00'; //Configuracion del tercero respecto al impuesto / retención
         }
+        $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
+        $cadena .= "\n";
+
+        //$numRegistro=$numRegistro+1;
         
         
-        $cadena .= str_pad($numRegistro, 7, "0", STR_PAD_LEFT)."99990001001";
+        $cadena .= str_pad(4, 7, "0", STR_PAD_LEFT)."99990001001";
 
         $lineas = explode("\n", $cadena);
 

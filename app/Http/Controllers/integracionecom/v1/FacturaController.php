@@ -87,7 +87,7 @@ class FacturaController extends Controller
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Cliente de contado
             $cadena .= str_pad($factura['nit'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a remisionar
             $cadena .= $factura['sucursal_cliente'];//Sucursal cliente a remisionar
-            $cadena .=  str_pad($vendedorFactura, 15, " ",STR_PAD_LEFT);//Tercero vendedor
+            $cadena .=  str_pad($vendedorFactura, 15, " ",STR_PAD_RIGHT);//Tercero vendedor
             $cadena .= str_pad($factura['numero_factura'], 10, "0", STR_PAD_LEFT); //Referencia del documento
             $cadena .= str_pad('', 12, " ", STR_PAD_RIGHT); //Numero orden de compra
             $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Numero de cargue
@@ -97,7 +97,7 @@ class FacturaController extends Controller
             $cadena .= '00000001.0000'; //Tasa de conversión
             $cadena .= 'COP'; //Moneda local
             $cadena .= '00000001.0000'; //Tasa local
-            $cadena .= str_pad('', 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
+            $cadena .= str_pad('n1.1:'.$factura['observaciones_factura'], 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
             $cadena .= '000'; //Punto de envio
             $cadena .= '1'; //Indicador de contacto
             $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //Contacto
@@ -120,11 +120,11 @@ class FacturaController extends Controller
             $cadena .= str_pad('', 15, " ", STR_PAD_RIGHT); //Identificación del conductor
             $cadena .= str_pad('', 30, " ", STR_PAD_RIGHT); //Numero de guia
             $cadena .= '0000000000.0000'; //Cajas/bultos
-            $cadena .= '0000000000.0000'; //Peso
-            $cadena .= '0000000000.0000'; //Volumen
-            $cadena .= '0000000000.0000'; //Valor asegurado
+            $cadena .= '000000000000000.0000'; //Peso
+            $cadena .= '000000000000000.0000'; //Volumen
+            $cadena .= '000000000000000.0000'; //Valor asegurado
             $cadena .= str_pad('', 255, " ", STR_PAD_RIGHT); //Notas
-            $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Caja de recaudo
+            $cadena .= str_pad('2', 3, "0", STR_PAD_LEFT); //Caja de recaudo
             $cadena .= '0'; //Genera Kit
             $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Tipo de documento de proceso
             $cadena .= str_pad('', 5, " ", STR_PAD_RIGHT); //Bodega de componentes del kit
@@ -136,6 +136,7 @@ class FacturaController extends Controller
             //-------- Caja
 
             $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT); //Numero de registro
+            $cadena .= str_pad(358, 4, "0", STR_PAD_LEFT); //Tipo de registro
             $cadena .= '00'; //Subtipo de registro
             $cadena .= '01'; //version del tipo de registro
             $cadena .= '001'; //Compañia
@@ -166,7 +167,8 @@ class FacturaController extends Controller
             //-------Relacion documentos
 
             $cadena .= str_pad(4, 7, "0", STR_PAD_LEFT); //Numero de registro
-            $cadena .= '00'; //Subtipo de registro
+            $cadena .= str_pad(461, 4, "0", STR_PAD_LEFT); //Tipo de registro
+            $cadena .= '02'; //Subtipo de registro
             $cadena .= '01'; //version del tipo de registro
             $cadena .= '001'; //Compañia
             $cadena .= '001'; //Centro de operación del documento
@@ -337,7 +339,7 @@ class FacturaController extends Controller
             ];
         }
 
-        //--------Defino data
+        //--------Defino data -> captura todos los datos del json
         $this->data = $request->input('data');
 
         //--------Valido datos encabezado pedido
@@ -415,6 +417,7 @@ class FacturaController extends Controller
             'numero_documento_remision' => 'required',
             'bodega' => 'required|digits_between:1,5',
             'centro_operacion' => 'required|digits_between:1,3',
+            'observaciones_factura' => 'max:2000',
             
         ];
 
