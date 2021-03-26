@@ -32,6 +32,7 @@ class PedidoController extends Controller
                 ]
             );
 
+            Log::info($datosAgrupados);
             return response()->json([
                 'code' => 200,
                 'data' => $datosAgrupados,

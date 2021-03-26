@@ -65,7 +65,7 @@ class ClienteController extends Controller
         }
 
         return response()->json([
-            'created' => false,
+            'created' => true,
             'code' => 201,
             'errors' =>0,
         ], 201);
@@ -197,7 +197,7 @@ class ClienteController extends Controller
 
         $lineas = explode("\n", $cadena);
 
-        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.txt';
+        $nombreArchivo = str_pad($data['nit'], 15, "0", STR_PAD_LEFT) . '.xml';
         
         $xml=$this->crearXml('pandapan/terceros/xml/',$nombreArchivo,$lineas);
         $respImport=$this->importarXml($xml);
