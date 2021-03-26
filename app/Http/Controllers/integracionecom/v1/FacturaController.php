@@ -51,7 +51,7 @@ class FacturaController extends Controller
 
             //-------- Encabezado factura
 
-            $vendedorFactura=$this->obtenerVendedorFactura($factura['bodega'],$factura['tipo_documento'],$factura['centro_operacion']);
+            /*$vendedorFactura=$this->obtenerVendedorFactura($factura['bodega'],$factura['tipo_documento'],$factura['centro_operacion']);
             if (empty($vendedorFactura)) {
 
                 return response()->json([
@@ -60,7 +60,7 @@ class FacturaController extends Controller
                     'errors' => 'No existe vendedor para la bodega '.$factura['bodega'].' tipo documento factura '.$factura['tipo_documento'].' centro de operacion '.$factura['centro_operacion']
                 ], 412);
     
-            }
+            }*/
 
             $cadena = "";
             $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
@@ -87,7 +87,7 @@ class FacturaController extends Controller
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Cliente de contado
             $cadena .= str_pad($factura['nit'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a remisionar
             $cadena .= $factura['sucursal_cliente'];//Sucursal cliente a remisionar
-            $cadena .=  str_pad($vendedorFactura, 15, " ",STR_PAD_RIGHT);//Tercero vendedor
+            $cadena .= str_pad($factura['cedula_vendedor'], 15, " ",STR_PAD_RIGHT);//Tercero vendedor
             $cadena .= str_pad($factura['numero_factura'], 10, "0", STR_PAD_LEFT); //Referencia del documento
             $cadena .= str_pad('', 12, " ", STR_PAD_RIGHT); //Numero orden de compra
             $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Numero de cargue
@@ -407,6 +407,7 @@ class FacturaController extends Controller
             'fecha_factura' => 'required|date_format:"Ymd"',
             'nit' => 'required|max:15',
             'sucursal_cliente' => 'required|digits_between:1,3',
+            'cedula_vendedor' => 'required',
             'nombre_vendedor' => 'required',
             'medio_pago' => [
                 'required',
@@ -563,7 +564,8 @@ class FacturaController extends Controller
 //             "numero_factura":"",
 //             "fecha_factura":"",
 //             "nit":"",
-//             "sucursal_cliente":"",            
+//             "sucursal_cliente":"",
+//             "cedula_vendedor":"",            
 //             "nombre_vendedor":"",  
 //             "medio_pago":"CG1",                 
 //             "valor_medio_pago":"",                 
@@ -580,9 +582,7 @@ class FacturaController extends Controller
 //                         "cantidad":2,
 //                         "valor_bruto": 8116
 //                     }
-                   
 //             ]
-
 //         }
 //     ]
 // }

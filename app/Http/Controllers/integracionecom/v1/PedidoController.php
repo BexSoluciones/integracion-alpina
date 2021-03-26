@@ -28,7 +28,7 @@ class PedidoController extends Controller
 
             $datosAgrupados = $this->groupArray($pedidos, 'numero_pedido',
                 [
-                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente','observaciones_pedido','centro_operacion_bodega','tipo_doc_remision','doc_remision'
+                    'fecha_pedido', 'tipo_documento', 'bodega', 'centro_operacion', 'tipo_cliente', 'nit_cliente', 'sucursal_cliente', 'observaciones_pedido','tipo_doc_remision','doc_remision'
                 ]
             );
 
@@ -111,7 +111,7 @@ class PedidoController extends Controller
             $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido'] . "//------Vendedor:" . $pedido['vendedor'] . "")), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
             $cadena .= '000'; //Punto de envio
-            $cadena .= str_pad('001', 15, " ", STR_PAD_RIGHT); //Vendedor del pedido *preguntar willy*
+            $cadena .= str_pad($pedido['cedula_vendedor'], 15, " ", STR_PAD_RIGHT); //Vendedor del pedido
             $cadena .= str_pad('', 50, " ", STR_PAD_RIGHT); //Contacto
             $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 1
             $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //Direccion 2
@@ -135,7 +135,7 @@ class PedidoController extends Controller
                 $listaPrecio = $detallePedido['lista_precio'];
                 $productoSiesa = $this->obtenerCodigoProductoSiesa($detallePedido['codigo_producto']);
                 $codigoProductoSiesa = $productoSiesa[0]['codigo_producto'];
-                $vendedor=$this->obtenerVendedor($pedido['bodega'],$pedido['tipo_documento'],$pedido['centro_operacion']);
+                //$vendedor=$this->obtenerVendedor($pedido['bodega'],$pedido['tipo_documento'],$pedido['centro_operacion']);
 
                 $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT); //Numero consecutivo
                 $cadena .= '0431'; //Tipo registro
@@ -343,6 +343,7 @@ class PedidoController extends Controller
             'nit_cliente' => 'required|digits_between:1,15',
             'sucursal_cliente' => 'required|digits_between:1,15',
             'centro_operacion' => 'required|digits_between:1,15',
+            'cedula_vendedor' => 'required',
             'vendedor' => 'required',
             'observaciones_pedido' => 'max:2000',
         ];
@@ -489,19 +490,21 @@ class PedidoController extends Controller
 // {
 //     "data":[
 //         {
-//             "numero_pedido": "00014004",
-//             "tipo_documento":"PV",
+//             "numero_pedido": "00014010",
+//             "fecha_pedido":"20210324",
+//             "tipo_documento":"PUM",
 //             "bodega":"00121",
 //             "centro_operacion":"001",
-//             "tipo_cliente":"0003",
-//             "fecha_pedido":"20210203",
-//             "nit_cliente":"1037606716",
+//             "tipo_cliente":"0003",            
+//             "nit_cliente":"71295664",
 //             "sucursal_cliente":"001",
-//             "observaciones_pedido":"Prueba bexsoluciones",
+//             "cedula_vendedor":"1033648005",
+//             "vendedor":"GONZALEZ  LINA MARCELA",
+//             "observaciones_pedido":"Prueba bexsoluciones",            
 //             "detalle_pedido":[
 //                     {
 //                         "codigo_producto": "67850169",
-//                         "lista_precio":"B2B",
+//                         "lista_precio":"B2B",       
 //                         "cantidad":2,
 //                         "precio_unitario": 8116
 //                     },
@@ -516,16 +519,9 @@ class PedidoController extends Controller
 //                         "lista_precio":"B2B",
 //                         "cantidad":1,
 //                         "precio_unitario": 8365
-//                     },
-//                     {
-//                         "codigo_producto": "67780623",
-//                         "lista_precio":"B2B",
-//                         "cantidad":3,
-//                         "precio_unitario": 11371
 //                     }
 //             ]
 
 //         }
-
 //     ]
 // }
