@@ -91,17 +91,24 @@ class CompraDevolucionCompraController extends Controller
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlCompraDevCompra);
-
-            $datosAgrupados = $this->groupArray($datos, 'consec_doc',
+            if(!empty($datos)){
+                $datosAgrupados = $this->groupArray($datos, 'consec_doc',
                 [
                     'cia', 'centro_operacion', 'tipo_doc', 'consec_doc', 'fecha_doc', 'periodo_doc', 'nit','razon_social','sucursal_terc','valor_base_gravable','observacion'
                 ]
-            );
+                );
 
-            $respuesta = [
+                $respuesta = [
                 'code' => 200,
                 'data' => $datosAgrupados,
-            ];
+                ];
+            }else{
+                return response()->json([
+                    'code' => 404,
+                    'errors' => 'No se encontraron registros'
+                ], 404);
+            }
+
 
             
         // }
