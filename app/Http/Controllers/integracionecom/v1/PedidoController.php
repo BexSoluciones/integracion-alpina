@@ -197,6 +197,10 @@ class PedidoController extends Controller
                         'created' => true,
                         'code' => 201,
                         'errors' => $respValidacion['errors'],
+                        'pedido'=>[
+                            'tipo_documento'=>$pedido['tipo_documento'],
+                            'numero_pedido'=>$pedido['numero_pedido'],
+                        ]
                     ], 201);
                     // $this->cambiarEstadoPedido($pedido->id_order, 15);
                     // $this->info('todo ok');
@@ -236,6 +240,11 @@ class PedidoController extends Controller
             'created' => true,
             'code' => 201,
             'errors' => 0,
+            'pedido'=>[
+                'tipo_documento'=>$pedido['tipo_documento'],
+                'numero_pedido'=>$pedido['numero_pedido'],
+            ]
+            
         ], 201);
 
     }
