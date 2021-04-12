@@ -162,7 +162,7 @@ class PedidoController extends Controller
                 $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //Proyecto
                 $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha de entrega del pedido
                 $cadena .= '000'; //Nro. dias de entrega del documento
-                $cadena .= $listaPrecio; //Lista de precio-->agregar al migrar productos
+                $cadena .= str_pad($listaPrecio, 3, " ", STR_PAD_RIGHT); //Lista de precio-->agregar al migrar productos
                 $cadena .= 'UNID'; //Unidad de medida-->pendiente
                 $cadena .= str_pad(intval($detallePedido['cantidad']), 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad base
                 $cadena .= str_pad('', 15, "0", STR_PAD_LEFT) . '.0000'; //Cantidad adicional
@@ -387,7 +387,7 @@ class PedidoController extends Controller
 
         $rules = [
             'codigo_producto' => 'required',
-            'lista_precio' => 'required|size:3',
+            'lista_precio' => 'required|size:2',
             'cantidad' => 'required|digits_between:1,15',
             'precio_unitario' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
         ];

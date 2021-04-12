@@ -31,6 +31,7 @@ Route::group([
         Route::get('logout', 'Auth\AuthController@logout');
         Route::get('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@getPedidoSiesa');
         Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@subirPedidoSiesa');
+        //Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\IngresoPedidoController@recibirPedidoJson');
 
         Route::get('integracionecom/v1/compras-devolucion-compras', 'integracionecom\v1\CompraDevolucionCompraController@getComprasDevolucionesCompra');
         Route::get('integracionecom/v1/inventarios', 'integracionecom\v1\InventarioController@getInventario');
