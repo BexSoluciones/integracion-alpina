@@ -182,9 +182,12 @@ class PedidoController extends Controller
                 }else {
                     return response()->json([
                         'code' => 404,
-                        'errors' => 'El producto relacionado no existe',
-                        'producto' => $detallePedido['codigo_producto']
-  
+                        'errors' => 'El siguiente producto en el pedido relacionado no existe',
+                        'pedido'=>[
+                            'tipo_documento'=>$pedido['tipo_documento'],
+                            'numero_pedido'=>$pedido['numero_pedido'],
+                            'producto' => $detallePedido['codigo_producto']
+                        ]
                       ], 404);
                 }  
             }
