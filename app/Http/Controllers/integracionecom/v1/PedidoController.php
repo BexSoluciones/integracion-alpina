@@ -184,6 +184,8 @@ class PedidoController extends Controller
                         'code' => 404,
                         'errors' => 'El siguiente producto en el pedido relacionado no existe',
                         'pedido'=>[
+                            'centro_operacion'=>$pedido['centro_operacion'],
+                            'bodega'=>$pedido['bodega'],
                             'tipo_documento'=>$pedido['tipo_documento'],
                             'numero_pedido'=>$pedido['numero_pedido'],
                             'producto' => $detallePedido['codigo_producto']
