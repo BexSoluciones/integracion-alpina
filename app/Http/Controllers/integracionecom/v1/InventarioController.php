@@ -95,24 +95,30 @@ class InventarioController extends Controller
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
 
-            $datosAgrupados = $this->groupArray($datos, 'consec_doc',
-                [
-                    'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
-                ]
-            );
-            // Log::info("======== datos agrupados =====");
-            // Log::info($datosAgrupados);
+            if(!empty($datos)){
+
+                $datosAgrupados = $this->groupArray($datos, 'consec_doc',
+                    [
+                        'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
+                    ]
+                );
+
+
             $respuesta = [
                 'code' => 200,
                 'data' => $datosAgrupados,
             ];
+            
+            }else{
+                return response()->json([
+                    'code' => 404,
+                    'errors' => 'No se encontraron registros'
+                ], 404);
+            }
+            
         }
 
-        if (!empty($datos)) {
-            return response()->json($respuesta, 200);
-        } else {
-            return response()->json([], 404);
-        }
+       
 
     }
 
