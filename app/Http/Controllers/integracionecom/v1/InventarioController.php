@@ -65,18 +65,26 @@ class InventarioController extends Controller
 
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
-
-            $datosAgrupados = $this->groupArray($datos, 'consec_doc',
-            [
-                'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
-            ]
-            );
+            if (!empty($datos)) {
+                $datosAgrupados = $this->groupArray($datos, 'consec_doc',
+                    [
+                        'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
+                    ]
+                );
+                $respuesta['code'] = 200;
+                $respuesta['data'] = $datosAgrupados;
+            }else {
+                return response()->json([
+                    'code' => 404,
+                    'errors' => 'No se encontraron registros'
+                ], 404);
+            }
 
             $totalRegistros = $datosConteo[0]['conteo'];
             $totalPaginas = ceil($totalRegistros / $filasXpagina);
 
-            $respuesta['code'] = 200;
-            $respuesta['data'] = $datosAgrupados;
+            //$respuesta['code'] = 200;
+            //$respuesta['data'] = $datosAgrupados;
             if ($totalPaginas > 1) {
                 $respuesta['links'] = [
                     'previous' => $pagina == 1 ? null : url('/') . '/' . $rutaActual . '?page=' . $anterior,
@@ -94,19 +102,17 @@ class InventarioController extends Controller
             $sqlInventario = $this->armarSqlInventario($filtros, false, $paramPaginacion = []);
             $objWebserviceSiesa = $this->getWebServiceSiesa($idConexion);
             $datos = $objWebserviceSiesa->ejecutarSql($sqlInventario['sqlPrincipal']);
-
             if(!empty($datos)){
-
                 $datosAgrupados = $this->groupArray($datos, 'consec_doc',
                     [
                         'tipo_doc', 'cia', 'centro_operacion', 'fecha_doc', 'periodo_doc', 'observacion', 'valor_documento',
                     ]
                 );
-
-
-            $respuesta = [
+                
+                 return $respuesta = [
                 'code' => 200,
                 'data' => $datosAgrupados,
+                
             ];
             
             }else{
@@ -118,7 +124,7 @@ class InventarioController extends Controller
             
         }
 
-       
+        return response()->json($respuesta, 200);
 
     }
 
