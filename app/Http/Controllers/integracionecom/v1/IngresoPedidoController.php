@@ -6,6 +6,8 @@ use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
 use App\Models\BodegasTiposDocModel;
 use App\Models\ConexionesModel;
+use App\Models\EncabezadoPedidoModel;
+use App\Models\DetallePedidoModel;
 use App\Traits\TraitHerramientas;
 use Illuminate\Http\Request;
 use Log;
@@ -14,70 +16,170 @@ use Validator;
 
 class IngresoPedidoController extends Controller
 {
+    use TraitHerramientas;
+
+
     public function recibirPedidoJson(Request $request){
-        
-        //$this->guardarEncabezadoPedido($request);
+         
+        // $json= '
+        // {
+        //     "data": [';
+        //     $j=452688;
+        //     for ($i=$j; $i <  453988 ; $i++) { 
+
+        //         $json.='{
+        //             "numero_pedido": "'.$i.'",
+        //             "fecha_pedido": "20210406",
+        //             "tipo_documento": "PUM",
+        //             "bodega": "00121",
+        //             "centro_operacion": "001",
+        //             "tipo_cliente": "0001",
+        //             "nit_cliente": "32393547",
+        //             "sucursal_cliente": "001",
+        //             "cedula_vendedor": "1017146625",
+        //             "vendedor": "ALEX DE JESUS RUEDA VASQUEZ",
+        //             "observaciones_pedido": "",
+        //             "detalle_pedido": [
+        //                 {
+        //                     "codigo_producto": "673144009",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": 1,
+        //                     "precio_unitario": 1
+        //                 },
+        //                 {
+        //                     "codigo_producto": "67566118",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "5",
+        //                     "precio_unitario": "1354"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "84164712",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "1",
+        //                     "precio_unitario": "8403"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "84171066",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "5",
+        //                     "precio_unitario": "1354"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "CO4240",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "1",
+        //                     "precio_unitario": "7690"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "CO4241",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "1",
+        //                     "precio_unitario": "7690"
+        //                 }
+        //             ]
+        //         },';
+               
+        //     }
 
 
-        $this->guardarDetallePedido($request);
-        
+        // $json.="        ]
+        // }
+        // ";
+        // echo $json;
 
-    }
+        // exit();
 
-    public function guardarPedido($datosPedido){
+        //------------validando json
 
-    }
 
-    public function guardarDetallePedido($request){
-        
-        $pedidos = $request->input('data');
-        // dump('=== pedido completo==');
-        // dump($pedidos);
-        
-        $nuevoArray=[];            
-        foreach ($pedidos as $key => $value) {
-                       
-            $prueba= $pedidos[$key];
-            // dump('=== pedido==');
-            // dump($prueba);
-            
-            foreach ($value as $campo => $valor) {
-                //$nuevoArray[$campo]=$valor;
-                if($campo=='detalle_pedido'){
-                    foreach ($valor as $key2 => $value2) {
-                        //$prueba2 =  $valor[$key2];
-                         $nuevoArray[$key2] = $value2;
-                        //dump($nuevoArray);
-                    }
-                       
-                    
-                }
-            }
-        //    dump('==== detalle pedido===');
-        //     dump($value);
-        //     dump('==== nuevo array===');
-            dump($nuevoArray);
-            
+        $respValidacion = $this->validarEstructuraJson($request);
+
+   return      response()->json($respValidacion, 412);
+        // Log::info($respValidacion);
+
+        if ($respValidacion['valid'] == false) {
+
+            return response()->json([
+                'created' => false,
+                'code' => 412,
+                'errors' => $respValidacion['errors'],
+            ], 412);
 
         }
-        
-        
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // try {
+            
+        //     $this->guardarEncabezadoPedido($request);
+        //     $this->guardarDetallePedido($request);
+            
+        //     return response()->json([
+        //         'created' => true,
+        //         'code' => 201,
+        //         'errors' =>0 ,
+        //     ], 201);
+
+        // } catch (\Exception $e) {
+        //     return response()->json([
+        //         'created' => false,
+        //         'code' => 500,
+        //         'errors' =>"Error de servidor por favor contactarse con el administrador",
+        //     ], 500);
+        // }
+
+    }
+
+    
+
+    public function guardarDetallePedido($request){
+
+        $pedidos = $request->input('data');
+        $contadorItem=0;
+        $pedidoItem=[];   
+        foreach ($pedidos as $keya => $pedido) {                      
+            $numeroPedido=$pedido['numero_pedido'];
+            $centroOperacion=$pedido['centro_operacion'];
+            $tipoDoc=$pedido['tipo_documento'];
+            $bodega=$pedido['bodega'];
+            $detallePedido=$pedido['detalle_pedido'];
+            
+            foreach ($detallePedido as $keyb => $item) {
+                $item['centro_operacion']=$centroOperacion;
+                $item['tipo_documento']=$tipoDoc;
+                $item['numero_pedido']=$numeroPedido;
+                $item['bodega']=$bodega;
+                $pedidoItem[$contadorItem] = $item;
+                $contadorItem++;
+            }
+        }
+        //dump($pedidoItem);
+        DetallePedidoModel::insertOrIgnore($pedidoItem);
     }
 
     public function guardarEncabezadoPedido($request){
 
+        
         $pedidos = $request->input('data');
         
-        // dd($pedidos[1]['detalle_pedido']);
-        
+        $this->validarEncabezadoPedido($pedido);
 
+        Log::info($pedidos);
+        $encabezadosPedidos=[];
+        $contadorPedido=0;
         foreach ($pedidos as $key => $value) {
-                       
-            //$prueba= $pedidos[$key];
-            dump('=== imprimiendo==');
-
-            // unset($value['detalle_pedido']);
+            //dump('=== imprimiendo==');
             $nuevoArray=[];            
             foreach ($value as $campo => $valor) {
                 
@@ -85,12 +187,16 @@ class IngresoPedidoController extends Controller
                     $nuevoArray[$campo]=$valor;
                 }
             }
-            dump('==== viejo array===');
-            dump($value);
-            dump('==== nuevo array===');
-            dump($nuevoArray);
-
+            // dump('==== viejo array===');
+            // dump($value);
+            //dump('==== nuevo array===');
+            //dump($nuevoArray);
+            $encabezadosPedidos[$contadorPedido]=$nuevoArray;
+            $contadorPedido++;
+            
         }
+        //dump($encabezadosPedidos);
+        EncabezadoPedidoModel::insertOrIgnore($encabezadosPedidos);
 
     }
 
@@ -148,6 +254,161 @@ class IngresoPedidoController extends Controller
 
             Log::error("$this->cliente : error en la funcion " . __FUNCTION__ . " parametro datos vacío.");
 
+        }
+
+    }
+
+    public function validarEstructuraJson($request)
+    {
+
+        //--------Valido que exista data
+        $formatoValido = false;
+        $formatoValido = $request->input('data') ?? false;
+
+        if (!$formatoValido) {
+            return [
+                'valid' => false,
+                'errors' => "Formato json no válido, data no está definido",
+            ];
+        }
+
+        //--------Defino data
+        $this->data = $request->input('data');
+
+        //--------Valido que exista detalle pedido
+        $erroresTotal=[];
+        $erroresEncabezado=[];
+        $contEE=0;
+        $erroresDetalleNoDefinido=[];
+        $contED=0;
+        foreach ($this->data as $key => $data) {
+            $datosEnc=$data;
+            unset($datosEnc['detalle_pedido']);
+            $respValidarEncabezado = $this->validarEncabezadoPedido($datosEnc);
+            if ($respValidarEncabezado['valid'] == false ) {
+
+                $erroresEncabezado[$contEE]= $respValidarEncabezado['errors'];
+                $erroresTotal[$key]['error_encabezado']=$erroresEncabezado;
+                $contEE++;
+            } 
+
+            
+            // $formatoValido = false;
+            // $formatoValido = $request->input('data.'.$key.'.detalle_pedido') ?? false;
+            // if (!$formatoValido) {
+                 
+            //     $erroresDetalleNoDefinido[$contED]=[
+
+            //         'valid' => false,
+            //         'pedido'=>$data['numero_pedido'],
+            //         'tipo_documento'=>$data['tipo_documento'],
+            //         'errors' => "Formato json no válido, detalle pedido ".$data['numero_pedido']." no está definido",
+            //     ];
+            //     $contED++;
+            // }
+
+        }
+        // dd($erroresDetalleNoDefinido);
+
+        return $erroresTotal;
+        dd($erroresTotal);
+
+        exit();
+        
+        //--------Valido datos encabezado pedido
+        $respValidarEncabezado = $this->validarEncabezadoPedido($this->data[0]);
+
+        //--------Valido datos detalle pedido
+        $item = 1;
+        $erroresDetallePedido = [];
+        foreach ($this->data[0]["detalle_pedido"] as $key => $detallePedido) {
+
+            $respValidacion = $this->validarDetallePedido($detallePedido);
+            if ($respValidacion['valid'] == false) {
+                $erroresDetallePedido[$key]['item_' . $item] = $respValidacion['errors'];
+            }
+
+            $item++;
+        }
+
+        if ($respValidarEncabezado['valid'] == false || count($erroresDetallePedido) > 0) {
+
+            return [
+                'valid' => false,
+                'errors' => [
+                    'ErroresEncabezadoPedido' => $respValidarEncabezado['errors'],
+                    'ErroresDetallePedido' => $erroresDetallePedido,
+                ],
+            ];
+        } else {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
+        }
+
+    }
+
+    public function validarEncabezadoPedido($datosEncPedido)
+    {
+        //------Elimino detalle pedido el cual no esta dentro de esta validación
+
+        
+        $datosEncPedido = $this->decodificarArray($datosEncPedido);
+
+        $rules = [
+            'tipo_documento' => 'required',
+            'bodega' => 'required',
+            'numero_pedido' => 'required|max:8',
+            'tipo_cliente' => 'required|digits:4',
+            'fecha_pedido' => 'required|date_format:"Ymd"',
+            'nit_cliente' => 'required|digits_between:1,15',
+            'sucursal_cliente' => 'required|digits_between:1,15',
+            'centro_operacion' => 'required|digits_between:1,15',
+            'cedula_vendedor' => 'required',
+            'vendedor' => 'required',
+            'observaciones_pedido' => 'max:2000',
+        ];
+
+        $validator = Validator::make($datosEncPedido, $rules);
+
+       
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors(),
+            ];
+        } else {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
+        }
+
+    }
+
+    public function validarDetallePedido($datosDetallePedido)
+    {
+
+        $rules = [
+            'codigo_producto' => 'required',
+            'lista_precio' => 'required|size:2',
+            'cantidad' => 'required|digits_between:1,15',
+            'precio_unitario' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
+        ];
+
+        $validator = Validator::make($datosDetallePedido, $rules);
+
+        if ($validator->fails()) {
+            return [
+                'valid' => false,
+                'errors' => $validator->errors(),
+            ];
+        } else {
+            return [
+                'valid' => true,
+                'errors' => 0,
+            ];
         }
 
     }
