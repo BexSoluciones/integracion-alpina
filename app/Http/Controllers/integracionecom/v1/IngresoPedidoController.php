@@ -39,75 +39,6 @@ class IngresoPedidoController extends Controller
     public function recibirPedidoJson(Request $request)
     {
 
-        // $json= '
-        // {
-        //     "data": [';
-        //     $j=452688;
-        //     for ($i=$j; $i <  453988 ; $i++) {
-
-        //         $json.='{
-        //             "numero_pedido": "'.$i.'",
-        //             "fecha_pedido": "20210406",
-        //             "tipo_documento": "PUM",
-        //             "bodega": "00121",
-        //             "centro_operacion": "001",
-        //             "tipo_cliente": "0001",
-        //             "nit_cliente": "32393547",
-        //             "sucursal_cliente": "001",
-        //             "cedula_vendedor": "1017146625",
-        //             "vendedor": "ALEX DE JESUS RUEDA VASQUEZ",
-        //             "observaciones_pedido": "",
-        //             "detalle_pedido": [
-        //                 {
-        //                     "codigo_producto": "673144009",
-        //                     "lista_precio": "L1",
-        //                     "cantidad": 1,
-        //                     "precio_unitario": 1
-        //                 },
-        //                 {
-        //                     "codigo_producto": "67566118",
-        //                     "lista_precio": "L1",
-        //                     "cantidad": "5",
-        //                     "precio_unitario": "1354"
-        //                 },
-        //                 {
-        //                     "codigo_producto": "84164712",
-        //                     "lista_precio": "L1",
-        //                     "cantidad": "1",
-        //                     "precio_unitario": "8403"
-        //                 },
-        //                 {
-        //                     "codigo_producto": "84171066",
-        //                     "lista_precio": "L1",
-        //                     "cantidad": "5",
-        //                     "precio_unitario": "1354"
-        //                 },
-        //                 {
-        //                     "codigo_producto": "CO4240",
-        //                     "lista_precio": "L1",
-        //                     "cantidad": "1",
-        //                     "precio_unitario": "7690"
-        //                 },
-        //                 {
-        //                     "codigo_producto": "CO4241",
-        //                     "lista_precio": "L1",
-        //                     "cantidad": "1",
-        //                     "precio_unitario": "7690"
-        //                 }
-        //             ]
-        //         },';
-
-        //     }
-
-        // $json.="        ]
-        // }
-        // ";
-        // echo $json;
-
-        // exit();
-
-        //------------validando json
-
         $respValidacion = $this->validarEstructuraJson($request);
 
         
@@ -411,3 +342,72 @@ class IngresoPedidoController extends Controller
     }
 
 }
+        // GENERAR JSON DE GRANDES REGISTROS
+        // $json= '
+        // {
+        //     "data": [';
+        //     $j=452688;
+        //     for ($i=$j; $i <  453988 ; $i++) {
+
+        //         $json.='{
+        //             "numero_pedido": "'.$i.'",
+        //             "fecha_pedido": "20210406",
+        //             "tipo_documento": "PUM",
+        //             "bodega": "00121",
+        //             "centro_operacion": "001",
+        //             "tipo_cliente": "0001",
+        //             "nit_cliente": "32393547",
+        //             "sucursal_cliente": "001",
+        //             "cedula_vendedor": "1017146625",
+        //             "vendedor": "ALEX DE JESUS RUEDA VASQUEZ",
+        //             "observaciones_pedido": "",
+        //             "detalle_pedido": [
+        //                 {
+        //                     "codigo_producto": "673144009",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": 1,
+        //                     "precio_unitario": 1
+        //                 },
+        //                 {
+        //                     "codigo_producto": "67566118",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "5",
+        //                     "precio_unitario": "1354"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "84164712",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "1",
+        //                     "precio_unitario": "8403"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "84171066",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "5",
+        //                     "precio_unitario": "1354"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "CO4240",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "1",
+        //                     "precio_unitario": "7690"
+        //                 },
+        //                 {
+        //                     "codigo_producto": "CO4241",
+        //                     "lista_precio": "L1",
+        //                     "cantidad": "1",
+        //                     "precio_unitario": "7690"
+        //                 }
+        //             ]
+        //         },';
+
+        //     }
+
+        // $json.="        ]
+        // }
+        // ";
+        // echo $json;
+
+        // exit();
+
+        //------------validando json

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use DB;
+use Log;
 
 class EncabezadoPedidoModel extends Model
 {
@@ -93,7 +94,7 @@ class EncabezadoPedidoModel extends Model
     public function obtenerPedidoEncabezado($estado){
         $sql="select * from ".$this->table." where estadoenviows='".$estado."'";          
         $resultadoSql = DB::select($sql);
-        //dump($resultadoSql);     
+        //log::info($resultadoSql);     
         return json_decode(json_encode($resultadoSql),true);
     }
 
