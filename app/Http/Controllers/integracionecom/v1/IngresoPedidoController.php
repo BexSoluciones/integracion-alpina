@@ -2,30 +2,48 @@
 
 namespace App\Http\Controllers\integracionecom\v1;
 
-use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
-use App\Models\BodegasTiposDocModel;
-use App\Models\ConexionesModel;
-use App\Models\EncabezadoPedidoModel;
 use App\Models\DetallePedidoModel;
+use App\Models\EncabezadoPedidoModel;
 use App\Traits\TraitHerramientas;
 use Illuminate\Http\Request;
 use Log;
-use Storage;
 use Validator;
 
 class IngresoPedidoController extends Controller
 {
     use TraitHerramientas;
 
+    const CAMPOS_AUTORIZADOS_ENCABEZADO = [
+        ['campo' => 'numero_pedido'],
+        ['campo' => 'fecha_pedido'],
+        ['campo' => 'tipo_documento'],
+        ['campo' => 'bodega'],
+        ['campo' => 'centro_operacion'],
+        ['campo' => 'tipo_cliente'],
+        ['campo' => 'nit_cliente'],
+        ['campo' => 'sucursal_cliente'],
+        ['campo' => 'cedula_vendedor'],
+        ['campo' => 'vendedor'],
+        ['campo' => 'observaciones_pedido'],
+        ['campo' => 'detalle_pedido'],
+    ];
 
-    public function recibirPedidoJson(Request $request){
-         
+    const CAMPOS_AUTORIZADOS_DETALLE = [
+        ['campo' => 'codigo_producto'],
+        ['campo' => 'lista_precio'],
+        ['campo' => 'cantidad'],
+        ['campo' => 'precio_unitario'],
+    ];
+
+    public function recibirPedidoJson(Request $request)
+    {
+
         // $json= '
         // {
         //     "data": [';
         //     $j=452688;
-        //     for ($i=$j; $i <  453988 ; $i++) { 
+        //     for ($i=$j; $i <  453988 ; $i++) {
 
         //         $json.='{
         //             "numero_pedido": "'.$i.'",
@@ -78,9 +96,8 @@ class IngresoPedidoController extends Controller
         //                 }
         //             ]
         //         },';
-               
-        //     }
 
+        //     }
 
         // $json.="        ]
         // }
@@ -91,12 +108,9 @@ class IngresoPedidoController extends Controller
 
         //------------validando json
 
-
         $respValidacion = $this->validarEstructuraJson($request);
 
-   return      response()->json($respValidacion, 412);
-        // Log::info($respValidacion);
-
+        
         if ($respValidacion['valid'] == false) {
 
             return response()->json([
@@ -107,95 +121,73 @@ class IngresoPedidoController extends Controller
 
         }
 
+        try {
 
+            $this->guardarEncabezadoPedido($request);
+            $this->guardarDetallePedido($request);
 
+            return response()->json([
+                'created' => true,
+                'code' => 201,
+                'errors' =>0 ,
+            ], 201);
 
-
-
-
-
-
-
-
-
-
-
-        // try {
-            
-        //     $this->guardarEncabezadoPedido($request);
-        //     $this->guardarDetallePedido($request);
-            
-        //     return response()->json([
-        //         'created' => true,
-        //         'code' => 201,
-        //         'errors' =>0 ,
-        //     ], 201);
-
-        // } catch (\Exception $e) {
-        //     return response()->json([
-        //         'created' => false,
-        //         'code' => 500,
-        //         'errors' =>"Error de servidor por favor contactarse con el administrador",
-        //     ], 500);
-        // }
+        } catch (\Exception $e) {
+            return response()->json([
+                'created' => false,
+                'code' => 500,
+                'errors' =>"Error de servidor por favor contactarse con el administrador",
+            ], 500);
+        }
 
     }
 
-    
-
-    public function guardarDetallePedido($request){
+    public function guardarDetallePedido($request)
+    {
 
         $pedidos = $request->input('data');
-        $contadorItem=0;
-        $pedidoItem=[];   
-        foreach ($pedidos as $keya => $pedido) {                      
-            $numeroPedido=$pedido['numero_pedido'];
-            $centroOperacion=$pedido['centro_operacion'];
-            $tipoDoc=$pedido['tipo_documento'];
-            $bodega=$pedido['bodega'];
-            $detallePedido=$pedido['detalle_pedido'];
-            
+        $contadorItem = 0;
+        $pedidoItem = [];
+        foreach ($pedidos as $keya => $pedido) {
+            $numeroPedido = $pedido['numero_pedido'];
+            $centroOperacion = $pedido['centro_operacion'];
+            $tipoDoc = $pedido['tipo_documento'];
+            $bodega = $pedido['bodega'];
+            $detallePedido = $pedido['detalle_pedido'];
+
             foreach ($detallePedido as $keyb => $item) {
-                $item['centro_operacion']=$centroOperacion;
-                $item['tipo_documento']=$tipoDoc;
-                $item['numero_pedido']=$numeroPedido;
-                $item['bodega']=$bodega;
+                $item['centro_operacion'] = $centroOperacion;
+                $item['tipo_documento'] = $tipoDoc;
+                $item['numero_pedido'] = $numeroPedido;
+                $item['bodega'] = $bodega;
                 $pedidoItem[$contadorItem] = $item;
                 $contadorItem++;
             }
         }
-        //dump($pedidoItem);
+        
         DetallePedidoModel::insertOrIgnore($pedidoItem);
     }
 
-    public function guardarEncabezadoPedido($request){
+    public function guardarEncabezadoPedido($request)
+    {
 
-        
         $pedidos = $request->input('data');
-        
-        $this->validarEncabezadoPedido($pedido);
-
-        Log::info($pedidos);
-        $encabezadosPedidos=[];
-        $contadorPedido=0;
+        $encabezadosPedidos = [];
+        $contadorPedido = 0;
         foreach ($pedidos as $key => $value) {
-            //dump('=== imprimiendo==');
-            $nuevoArray=[];            
+            $nuevoArray = [];
             foreach ($value as $campo => $valor) {
-                
-                if($campo!='detalle_pedido'){
-                    $nuevoArray[$campo]=$valor;
+
+                if ($campo != 'detalle_pedido') {
+                    $nuevoArray[$campo] = $valor;
                 }
             }
-            // dump('==== viejo array===');
-            // dump($value);
-            //dump('==== nuevo array===');
-            //dump($nuevoArray);
-            $encabezadosPedidos[$contadorPedido]=$nuevoArray;
-            $contadorPedido++;
             
+            $encabezadosPedidos[$contadorPedido] = $nuevoArray;
+            $contadorPedido++;
+
         }
-        //dump($encabezadosPedidos);
+        
         EncabezadoPedidoModel::insertOrIgnore($encabezadosPedidos);
 
     }
@@ -204,12 +196,12 @@ class IngresoPedidoController extends Controller
     {
 
         $datos = $this->ejecutarConsulta();
-        
+
         if (!empty($datos)) {
 
             //----se arma la tabla
             $campos = array_keys((array) $datos[0]);
-            //print_r($campos);
+            
             $nuevoArrayCampos = [];
             foreach ($campos as $key => $campo) {
                 $nuevoArrayCampos[$key] = $campo . ' text';
@@ -218,42 +210,38 @@ class IngresoPedidoController extends Controller
 
             $sqlTabla = "CREATE TABLE $tablaDestino  ( $camposTabla ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; ";
 
-            
-
             //-----se arma los insert
             $camposInsertSql = implode(',', $campos);
-			$sqlInsert = "INSERT INTO $tablaDestino ($camposInsertSql) values ";
-			$arrayValues=[];
-			$acumValues=0;
+            $sqlInsert = "INSERT INTO $tablaDestino ($camposInsertSql) values ";
+            $arrayValues = [];
+            $acumValues = 0;
             foreach ($datos as $key => $value) {
                 $arrayValuesRow = [];
                 foreach ($value as $keyb => $valores) {
-                    if($keyb=='password'){
-                        $arrayValuesRow[$keyb] = "'" .password_hash($valores,1). "'";
-                    }elseif($keyb=='secure_key'){
+                    if ($keyb == 'password') {
+                        $arrayValuesRow[$keyb] = "'" . password_hash($valores, 1) . "'";
+                    } elseif ($keyb == 'secure_key') {
                         $arrayValuesRow[$keyb] = "'" . md5(uniqid(mt_rand(0, mt_getrandmax()), true)) . "'";
-                    }else{
+                    } else {
                         $arrayValuesRow[$keyb] = "'" . $this->eliminarNumeroCadena(trim($valores)) . "'";
                     }
-                    
+
                 }
                 $valueInsert = implode(',', $arrayValuesRow);
-				$arrayValues[$acumValues]= "($valueInsert)";
-				$acumValues++;
-			}			
-			
-			$valuesInsert=implode(',',$arrayValues);
+                $arrayValues[$acumValues] = "($valueInsert)";
+                $acumValues++;
+            }
 
-			$resp =[
-				'sqlDropTable'=>"DROP TABLE IF EXISTS $tablaDestino; ",
-				'sqlCreateTable'=>$sqlTabla,
-				'sqlInsert'=>$sqlInsert .= " $valuesInsert;"
-			]; 
-            return $resp; 
+            $valuesInsert = implode(',', $arrayValues);
+
+            $resp = [
+                'sqlDropTable' => "DROP TABLE IF EXISTS $tablaDestino; ",
+                'sqlCreateTable' => $sqlTabla,
+                'sqlInsert' => $sqlInsert .= " $valuesInsert;",
+            ];
+            return $resp;
         } else {
-
             Log::error("$this->cliente : error en la funcion " . __FUNCTION__ . " parametro datos vacío.");
-
         }
 
     }
@@ -276,69 +264,58 @@ class IngresoPedidoController extends Controller
         $this->data = $request->input('data');
 
         //--------Valido que exista detalle pedido
-        $erroresTotal=[];
-        $erroresEncabezado=[];
-        $contEE=0;
-        $erroresDetalleNoDefinido=[];
-        $contED=0;
+        $erroresTotal = [];
+        $erroresEncabezado = [];
+        $contEE = 0;
+        $erroresDetalleNoDefinido = [];
+        $contED = 0;
         foreach ($this->data as $key => $data) {
-            $datosEnc=$data;
-            unset($datosEnc['detalle_pedido']);
-            $respValidarEncabezado = $this->validarEncabezadoPedido($datosEnc);
-            if ($respValidarEncabezado['valid'] == false ) {
-
-                $erroresEncabezado[$contEE]= $respValidarEncabezado['errors'];
-                $erroresTotal[$key]['error_encabezado']=$erroresEncabezado;
-                $contEE++;
-            } 
-
             
-            // $formatoValido = false;
-            // $formatoValido = $request->input('data.'.$key.'.detalle_pedido') ?? false;
-            // if (!$formatoValido) {
-                 
-            //     $erroresDetalleNoDefinido[$contED]=[
+            $datosEnc = $data;
+            unset($datosEnc['detalle_pedido']);
+            $datosEnc = $this->depurarCamposAutorizados(self::CAMPOS_AUTORIZADOS_ENCABEZADO, $datosEnc);
 
-            //         'valid' => false,
-            //         'pedido'=>$data['numero_pedido'],
-            //         'tipo_documento'=>$data['tipo_documento'],
-            //         'errors' => "Formato json no válido, detalle pedido ".$data['numero_pedido']." no está definido",
-            //     ];
-            //     $contED++;
-            // }
+            $respValidarEncabezado = $this->validarEncabezadoPedido($datosEnc);
+            if ($respValidarEncabezado['valid'] == false) {
 
-        }
-        // dd($erroresDetalleNoDefinido);
-
-        return $erroresTotal;
-        dd($erroresTotal);
-
-        exit();
-        
-        //--------Valido datos encabezado pedido
-        $respValidarEncabezado = $this->validarEncabezadoPedido($this->data[0]);
-
-        //--------Valido datos detalle pedido
-        $item = 1;
-        $erroresDetallePedido = [];
-        foreach ($this->data[0]["detalle_pedido"] as $key => $detallePedido) {
-
-            $respValidacion = $this->validarDetallePedido($detallePedido);
-            if ($respValidacion['valid'] == false) {
-                $erroresDetallePedido[$key]['item_' . $item] = $respValidacion['errors'];
+                $erroresEncabezado[$contEE] = $respValidarEncabezado['errors'];
+                $erroresTotal['registro_'.($key+1)]['error_encabezado_pedido'] = $erroresEncabezado;
+                $contEE++;
             }
 
-            $item++;
+            $formatoValido = false;
+            $formatoValido = $request->input('data.' . $key . '.detalle_pedido') ?? false;
+            
+            if (!$formatoValido) {
+                $erroresTotal['registro_'.($key+1)]['error_detalle_pedido'] = "Formato json no válido, detalle pedido " . $data['numero_pedido'] . " no está definido";
+                $contED++;
+            } elseif($formatoValido) {
+                
+                $item = 1;
+                $erroresDetallePedido = [];
+                foreach ($data['detalle_pedido'] as $keyb => $detallePedido) {
+                    
+                    $detallePedido=$this->depurarCamposAutorizados(self::CAMPOS_AUTORIZADOS_DETALLE, $detallePedido);
+                    $respValidacion = $this->validarDetallePedido($detallePedido);
+                    if ($respValidacion['valid'] == false) {
+                        $erroresDetallePedido['item_' . $item] = $respValidacion['errors'];
+                    }
+
+                    $item++;
+                }
+                if(count($erroresDetallePedido)>0){
+                    $erroresTotal['registro_'.($key+1)]['error_detalle_pedido'] = $erroresDetallePedido;
+                    $contED++;
+                }
+                
+            }
+
         }
 
-        if ($respValidarEncabezado['valid'] == false || count($erroresDetallePedido) > 0) {
-
+        if (count($erroresTotal) > 0) {
             return [
                 'valid' => false,
-                'errors' => [
-                    'ErroresEncabezadoPedido' => $respValidarEncabezado['errors'],
-                    'ErroresDetallePedido' => $erroresDetallePedido,
-                ],
+                'errors' => $erroresTotal,
             ];
         } else {
             return [
@@ -347,13 +324,14 @@ class IngresoPedidoController extends Controller
             ];
         }
 
+        
+
     }
 
     public function validarEncabezadoPedido($datosEncPedido)
     {
         //------Elimino detalle pedido el cual no esta dentro de esta validación
 
-        
         $datosEncPedido = $this->decodificarArray($datosEncPedido);
 
         $rules = [
@@ -372,7 +350,6 @@ class IngresoPedidoController extends Controller
 
         $validator = Validator::make($datosEncPedido, $rules);
 
-       
         if ($validator->fails()) {
             return [
                 'valid' => false,
@@ -412,4 +389,24 @@ class IngresoPedidoController extends Controller
         }
 
     }
+
+    public function depurarCamposAutorizados($camposAutorizados, $data)
+    {
+
+        $nuevoArray = [];
+        foreach ($data as $campo => $valor) {
+
+            foreach ($camposAutorizados as $key => $value) {
+
+                if ($value['campo'] === $campo) {
+                    $nuevoArray[$campo] = $valor;
+                }
+
+            }
+
+        }
+
+        return $nuevoArray;
+    }
+
 }
