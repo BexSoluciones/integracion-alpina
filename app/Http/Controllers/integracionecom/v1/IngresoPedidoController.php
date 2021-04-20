@@ -133,6 +133,7 @@ class IngresoPedidoController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            Log::error("Error al guardar pedidos. Detalle error: {$e->getCode()},revisar linea: {$e->getLine()},{$e->getMessage()}");
             return response()->json([
                 'created' => false,
                 'code' => 500,
@@ -176,8 +177,8 @@ class IngresoPedidoController extends Controller
         $contadorPedido = 0;
         foreach ($pedidos as $key => $value) {
             $nuevoArray = [];
-            foreach ($value as $campo => $valor) {
-
+            $value['ip']=$this->getIpCliente();
+            foreach ($value as $campo => $valor) {                
                 if ($campo != 'detalle_pedido') {
                     $nuevoArray[$campo] = $valor;
                 }
@@ -335,16 +336,16 @@ class IngresoPedidoController extends Controller
         $datosEncPedido = $this->decodificarArray($datosEncPedido);
 
         $rules = [
-            'tipo_documento' => 'required',
-            'bodega' => 'required',
+            'tipo_documento' => 'required|max:5',
+            'bodega' => 'required|max:5',
             'numero_pedido' => 'required|max:8',
             'tipo_cliente' => 'required|digits:4',
             'fecha_pedido' => 'required|date_format:"Ymd"',
             'nit_cliente' => 'required|digits_between:1,15',
             'sucursal_cliente' => 'required|digits_between:1,15',
             'centro_operacion' => 'required|digits_between:1,15',
-            'cedula_vendedor' => 'required',
-            'vendedor' => 'required',
+            'cedula_vendedor' => 'required|max:100',
+            'vendedor' => 'required|max:255',
             'observaciones_pedido' => 'max:2000',
         ];
 
