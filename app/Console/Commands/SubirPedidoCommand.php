@@ -34,7 +34,6 @@ class SubirPedidoCommand extends Command
         $pedidos=$this->obtenerPedidos();
 
 
-        //dump($pedidos);
         foreach ($pedidos as $key => $pedido) {
             
             $objPedidoDetalle = new DetallePedidoModel();
@@ -45,15 +44,16 @@ class SubirPedidoCommand extends Command
                 $this->subirPedidoSiesa($pedido,$detallePedido);
             }else{
                 
-                $error = json_encode([
-                    'errors' => 'El tipo de documento, centro de operacion y bodega no corresponden a una llave valida',
-                    'pedido'=>[
-                        'centro_operacion'=>$pedido['centro_operacion'],
-                        'bodega'=>$pedido['bodega'],
-                        'tipo_documento'=>$pedido['tipo_documento'],
-                        'numero_pedido'=>$pedido['numero_pedido'],
-                    ]
-                  ]);
+                $error = $tipoDocumentoValido['errors'];
+                // $error = json_encode([
+                //     'errors' => 'El tipo de documento, centro de operacion y bodega no corresponden a una llave valida',
+                //     'pedido'=>[
+                //         'centro_operacion'=>$pedido['centro_operacion'],
+                //         'bodega'=>$pedido['bodega'],
+                //         'tipo_documento'=>$pedido['tipo_documento'],
+                //         'numero_pedido'=>$pedido['numero_pedido'],
+                //     ]
+                //   ]);
                 $estado = 3;
                 $importar = false;
                 $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
@@ -184,16 +184,17 @@ class SubirPedidoCommand extends Command
                     $contador++;
                     $contadorDetallePedido++;
                 }else {
-                    $error = json_encode([
-                        'errors' => 'El siguiente producto en el pedido relacionado no existe',
-                        'pedido'=>[
-                            'centro_operacion'=>$pedido['centro_operacion'],
-                            'bodega'=>$pedido['bodega'],
-                            'tipo_documento'=>$pedido['tipo_documento'],
-                            'numero_pedido'=>$pedido['numero_pedido'],
-                            'producto' => $detallePedido['codigo_producto']
-                        ]
-                      ]);
+                    $error = 'El siguiente producto en el pedido relacionado no existe '.$detallePedido['codigo_producto'];
+                    // $error = json_encode([
+                    //     'errors' => 'El siguiente producto en el pedido relacionado no existe',
+                    //     'pedido'=>[
+                    //         'centro_operacion'=>$pedido['centro_operacion'],
+                    //         'bodega'=>$pedido['bodega'],
+                    //         'tipo_documento'=>$pedido['tipo_documento'],
+                    //         'numero_pedido'=>$pedido['numero_pedido'],
+                    //         'producto' => $detallePedido['codigo_producto']
+                    //     ]
+                    //   ]);
                     $estado = 3;
                     $importar = false;
                     $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
@@ -215,7 +216,6 @@ class SubirPedidoCommand extends Command
             if (!$this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT)) && $importar === true) {
                 //dump('enviando pedido a siesa');
                 $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
-                dump($resp);
                 if (empty($resp)) {
 
                     $error = 'Ok';
@@ -226,45 +226,54 @@ class SubirPedidoCommand extends Command
                     
                     $mensaje = "";
                     foreach ($resp->NewDataSet->Table as $key => $errores) {
-
-                        $mensaje .= "error $key ->";
+                        
+                        $error = "";
+                        //$mensaje .= "error $key ->";
                         foreach ($errores as $key => $detalleError) {
-                            $mensaje .= '***' . $key . '=>' . $detalleError;
+                            if ($key == 'f_detalle') {
+                                $error = $detalleError;
+                            }
+                            //$mensaje .= '***' . $key . '=>' . $detalleError;
+                            
+
                         }
+                        
 
                     }
-                    
-                    Log::info(print_r($resp->NewDataSet->Table, true));
-                    $error = print_r($resp->NewDataSet->Table, true);
+                    Log::info($error);
+                    //Log::info(print_r($resp->NewDataSet->Table, true));
+                    //$error = print_r($resp->NewDataSet->Table->f_detalle, true);
                     $estado = 3;
                     $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
 
                 }
 
             } elseif ($this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
-                $error = json_encode([
-                    'created' => false,
-                    'errors' => "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s'),
-                    'pedido'=>[
-                        'tipo_documento'=>$pedido['tipo_documento'],
-                        'numero_pedido'=>$pedido['numero_pedido'],
-                    ]
-                ]);
+                $error = "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s');
+                // $error = json_encode([
+                //     'created' => false,
+                //     'errors' => "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s'),
+                //     'pedido'=>[
+                //         'tipo_documento'=>$pedido['tipo_documento'],
+                //         'numero_pedido'=>$pedido['numero_pedido'],
+                //     ]
+                // ]);
                 $estado = 3;
                 $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
 
             }
 
         }else {
-            $error = json_encode([
-                'created' => false,
-                'errors' => "El pedido no tiene productos",
-                'pedido'=>[
-                    'tipo_documento'=>$pedido['tipo_documento'],
-                    'numero_pedido'=>$pedido['numero_pedido'],
-                ]
+            $error = 'El pedido no tiene productos asignados';
+            // $error = json_encode([
+            //     'created' => false,
+            //     'errors' => "El pedido no tiene productos",
+            //     'pedido'=>[
+            //         'tipo_documento'=>$pedido['tipo_documento'],
+            //         'numero_pedido'=>$pedido['numero_pedido'],
+            //     ]
                 
-            ]);
+            // ]);
             $estado = 3;
             $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
 
