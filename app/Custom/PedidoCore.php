@@ -153,33 +153,33 @@ class PedidoCore
 
             if (!$this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT)) && $importar === true) {
                 
-                Log::info("ejecutando funcion ".__FUNCTION__." .Pedido = ".$pedido['numero_pedido']);
+                // Log::info("ejecutando funcion ".__FUNCTION__." .Pedido = ".$pedido['numero_pedido']);
 
-                // $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
-                // if (empty($resp)) {
+                $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
+                if (empty($resp)) {
 
-                //     $error = 'Ok';
-                //     $estado = 2;
-                //     $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
+                    $error = 'Ok';
+                    $estado = 2;
+                    $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
                     
-                // } else {
+                } else {
                     
-                //     $mensaje = "";
-                //     foreach ($resp->NewDataSet->Table as $key => $errores) {
+                    $mensaje = "";
+                    foreach ($resp->NewDataSet->Table as $key => $errores) {
                         
-                //         $error = "";
-                //         foreach ($errores as $key => $detalleError) {
-                //             if ($key == 'f_detalle') {
-                //                 $error = $detalleError;
-                //             }
-                //         }
+                        $error = "";
+                        foreach ($errores as $key => $detalleError) {
+                            if ($key == 'f_detalle') {
+                                $error = $detalleError;
+                            }
+                        }
                         
 
-                //     }
-                //     $estado = 3;
-                //     $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
+                    }
+                    $estado = 3;
+                    $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
 
-                // }
+                }
 
             } elseif ($this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
                 $error = "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s');
