@@ -70,7 +70,7 @@ class WebServiceSiesa
                 }
             }
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $error = $e->getMessage();
             Log::info($error);
         }
@@ -131,18 +131,24 @@ class WebServiceSiesa
             $parm['pvstrDatos'] = $pvstrDatos;
             $parm['printTipoError'] = '1';
             $parm['cache_wsdl'] = 0; //new
-
             $client = new SoapClient($this->url, $parm);
             $result = $client->ImportarXML($parm); //llamamos al métdo que nos interesa con los parámetros
             
             $schema = simplexml_load_string($result->ImportarXMLResult->schema);
             return $any = simplexml_load_string($result->ImportarXMLResult->any);
 
+            
            
 
-        } catch (Exception $e) {
-            $error = $e->getMessage();   
-            Log::error($error);         
+        } catch (\Exception $fault) {
+
+            $error = $fault->getMessage();   
+            Log::info('======este es mensaje de error de conexion ======'); 
+            Log::error($error); 
+            return [
+                'conexion_exitosa'=>false,
+                'error'=>$error
+            ];        
         }
 
     }
