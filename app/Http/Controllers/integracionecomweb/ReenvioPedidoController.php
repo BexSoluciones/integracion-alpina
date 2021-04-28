@@ -17,13 +17,20 @@ class ReenvioPedidoController extends Controller
     public function index(Request $request)
     {
 // dump($request->all());
-        $pedido =$request->input('buscar');
-        $pedidosError = EncabezadoPedidoModel::where('estadoenviows', '=', "3")->paginate(100);
+
+        $buscar =$request->input('buscar');
+        $registrosXpagina=100;
+        if(!empty($buscar)){
+            $pedidosError = EncabezadoPedidoModel::where('estadoenviows', '=', "3")->where('numero_pedido','=',$buscar)->paginate($registrosXpagina);
+        }else{
+            $pedidosError = EncabezadoPedidoModel::where('estadoenviows', '=', "3")->paginate($registrosXpagina);
+        }
+        
         // dump($pedidosError);
-        return view('reenviopedido.index',compact(['pedidosError']));
+        return view('reenviopedido.index',compact(['pedidosError','buscar']));
     }
 
     public function reenviarPedido(){
-        
+
     }
 }

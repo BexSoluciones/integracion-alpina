@@ -18,7 +18,7 @@
                         
                     <form class="form-inline my-2 my-lg-0" method="get" action="{{ route('reenviopedido') }}">
                         @csrf
-                        <input class="form-control mr-sm-2" type="search" placeholder="Pedido" aria-label="Search" name="buscar" id="buscar">
+                        <input class="form-control mr-sm-2" type="search" placeholder="Número de pedido" aria-label="Search" name="buscar" id="buscar" value="{{$buscar}}">
                         <button class="btn btn-primary my-4 my-sm-0" type="submit">Buscar</button>
                       </form>
                       <hr>
@@ -43,9 +43,9 @@
                                     <td>{{ $pedido->tipo_documento }}</td>
                                     <td>{{ $pedido->centro_operacion }}</td>
                                     <td>{{ date_format(date_create($pedido->fecha_pedido),"Y-m-d") }}</td>
-                                    <td>{{ $pedido->estadoenviows }}</td>
+                                    <td><h5><span class="badge badge-danger ">{{ $pedido->estadoenviows }}</span></h5></td>
                                     <td >{{ $pedido->msmovws }}</td>
-                                    <td ><button type="button" class="btn btn-primary">Reenviar</button></td>
+                                    <td ><button type="button" class="btn btn-primary reenviar">Reenviar</button></td>
                                   </tr>
                                 @endforeach
                                 
@@ -61,4 +61,18 @@
         </div>
     </div>
 </div>
+
+
+<script>
+
+
+// alert( $.fn.jquery )
+    $(".reenviar").click(function(){
+    
+    alert('reenviando...');
+    
+    
+    });
+    </script>
 @endsection
+
