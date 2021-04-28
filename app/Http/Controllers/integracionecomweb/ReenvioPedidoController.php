@@ -22,4 +22,8 @@ class ReenvioPedidoController extends Controller
         // dump($pedidosError);
         return view('reenviopedido.index',compact(['pedidosError']));
     }
+
+    public function reenviarPedido(){
+        
+    }
 }

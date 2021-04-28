@@ -7,7 +7,7 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header">Re-envio pedido ecom a siesa</div>
+                <div class="card-header">Reenvío pedido</div>
 
                 <div class="card-body">
                     @if (session('status'))
@@ -31,6 +31,7 @@
                                 <th scope="col">Fecha pedido</th>
                                 <th scope="col">Cód. estado</th>
                                 <th scope="col" >Mensaje error</th>
+                                <th scope="col" >Acción</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -43,7 +44,8 @@
                                     <td>{{ $pedido->centro_operacion }}</td>
                                     <td>{{ date_format(date_create($pedido->fecha_pedido),"Y-m-d") }}</td>
                                     <td>{{ $pedido->estadoenviows }}</td>
-                                    <td data-toggle="tooltip" data-placement="top" title="Tooltip on top">{{ $pedido->msmovws }}</td>
+                                    <td >{{ $pedido->msmovws }}</td>
+                                    <td ><button type="button" class="btn btn-primary">Reenviar</button></td>
                                   </tr>
                                 @endforeach
                                 
