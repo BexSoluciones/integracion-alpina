@@ -80,7 +80,7 @@ class RecuperarContrasenaNotification extends Notification
             ->action('Restablecer contraseña', $url)
             ->line('Este enlace para restablecer la contraseña caducará en: minutos.', ['count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire')])
             ->line('Si no solicitó un restablecimiento de contraseña, no es necesario realizar ninguna otra acción.')
-            ->saludation('¡Saludos!');
+            ->salutation('¡Saludos!');
     }
 
     /**
