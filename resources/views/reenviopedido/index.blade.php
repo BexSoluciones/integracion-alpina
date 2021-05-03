@@ -15,7 +15,7 @@
                             {{ session('status') }}
                         </div>
                     @endif
-                    @if(!empty($pedidosError))
+                    @if(count($pedidosErrors) > 0)
                     <form class="form-inline my-2 my-lg-0" method="get" action="{{ route('reenviopedido') }}">
                         @csrf
                         <input class="form-control mr-sm-2" type="search" placeholder="Número de pedido" aria-label="Search" name="buscar" id="buscar" value="{{$buscar}}">
