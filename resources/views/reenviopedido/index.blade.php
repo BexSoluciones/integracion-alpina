@@ -15,7 +15,7 @@
                             {{ session('status') }}
                         </div>
                     @endif
-
+                    @if(!empty($pedidosError))
                     <form class="form-inline my-2 my-lg-0" method="get" action="{{ route('reenviopedido') }}">
                         @csrf
                         <input class="form-control mr-sm-2" type="search" placeholder="Número de pedido" aria-label="Search" name="buscar" id="buscar" value="{{$buscar}}">
@@ -35,6 +35,7 @@
                               </tr>
                             </thead>
                             <tbody>
+
                                 @foreach ($pedidosError as $pedido)
 
 
@@ -58,6 +59,11 @@
 
                           {{ $pedidosError->links() }}
 
+                          @else
+                          <div class="alert alert-primary" role="alert">
+                            No existen pedidos pendientes por reenviar.
+                          </div>
+                          @endif
 
                 </div>
             </div>
@@ -76,12 +82,12 @@
          //declarando objetos
          $textPedido= $(this).siblings('#pedido');
          $trPedido= $(this).parent().parent();
-         
+
          //declarando variables
          pedido = $textPedido.val();
-         
+
         //  $trPedido.css("background", "#e3342f");
-        
+
         $.ajax({
         async: true,
         cache: false,
@@ -101,10 +107,10 @@
 
             if(respuesta.renviado==true){
 
-                $trPedido.remove();  
+                $trPedido.remove();
                 alert(respuesta.mensaje);
-                              
-                
+
+
 
             }
 
