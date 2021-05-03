@@ -44,3 +44,4 @@ Route::get('email/verify/{id}/{hash}', 'Auth\VerificationController@verify')->na
 Route::post('email/resend', 'Auth\VerificationController@resend')->name('verification.resend');
 
 Route::get('/reenviopedido', 'integracionecomweb\ReenvioPedidoController@index')->name('reenviopedido');
+Route::get('/reenviar-pedido', 'integracionecomweb\ReenvioPedidoController@reenviarPedido')->name('reenviar-pedido');

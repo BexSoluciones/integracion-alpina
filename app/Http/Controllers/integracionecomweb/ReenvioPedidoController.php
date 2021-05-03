@@ -5,6 +5,8 @@ namespace App\Http\Controllers\integracionecomweb;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EncabezadoPedidoModel;
+use App\Models\LogErrorImportacionModel;
+use Log;
 
 class ReenvioPedidoController extends Controller
 {
@@ -30,7 +32,37 @@ class ReenvioPedidoController extends Controller
         return view('reenviopedido.index',compact(['pedidosError','buscar']));
     }
 
-    public function reenviarPedido(){
+    public function reenviarPedido(Request $request){        
 
+        try {
+            $pedido= $request->input('pedido');
+            $arrayLlave= explode("|",$pedido);
+    
+            Log::info($arrayLlave);
+            $centroOperacion= $arrayLlave[2];
+            $numeroPedido   = $arrayLlave[0];
+            $bodega= $arrayLlave[3];
+            $tipoDocumento= $arrayLlave[1];
+            $estado="0";
+    
+            $updatePedido= new LogErrorImportacionModel();
+            $updatePedido->actualizarEstadoDocumento("",$estado,$centroOperacion,$bodega,$tipoDocumento,$numeroPedido);
+    
+            return response()->json([
+                'mensaje'=>'Pedido actualizado',
+                'renviado' => true
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'mensaje'=>'Error al actualizar pedido',
+                'renviado' => false
+            ], 200);
+        }
+        
+
+    }
+
+    public function getEncabezadoPedidoModel(){
+        return new EncabezadoPedidoModel();
     }
 }
