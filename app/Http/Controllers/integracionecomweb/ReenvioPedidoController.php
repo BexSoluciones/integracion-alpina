@@ -38,7 +38,7 @@ class ReenvioPedidoController extends Controller
             $pedido= $request->input('pedido');
             $arrayLlave= explode("|",$pedido);
     
-            Log::info($arrayLlave);
+            // Log::info($arrayLlave);
             $centroOperacion= $arrayLlave[2];
             $numeroPedido   = $arrayLlave[0];
             $bodega= $arrayLlave[3];

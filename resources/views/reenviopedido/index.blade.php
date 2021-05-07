@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+
 <div class="container-fluid">
 
 
@@ -25,13 +26,14 @@
                         <table class="table table-condensed table-striped" style="font-size:0.7rem;">
                             <thead class="thead-dark">
                               <tr>
-                                <th scope="col">Número pedido</th>
-                                <th scope="col">Tipo doc.</th>
-                                <th scope="col">Cent. Opera</th>
-                                <th scope="col">Fecha pedido</th>
-                                <th scope="col">Cód. estado</th>
-                                <th scope="col" >Mensaje error</th>
-                                <th scope="col" >Acción</th>
+                                <th scope="col" width="10%">Número pedido</th>
+                                <th scope="col" width="10%">Tipo doc.</th>
+                                <th scope="col" width="10%">Cent. Opera</th>
+                                <th scope="col" width="10%">Fecha pedido</th>
+                                <th scope="col" width="14%">Fecha webservice</th>
+                                <th scope="col" width="6%">Cód. estado</th>
+                                <th scope="col" width="34%">Mensaje error</th>
+                                <th scope="col" width="6%">Acción</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -44,6 +46,7 @@
                                     <td>{{ $pedido->tipo_documento }}</td>
                                     <td>{{ $pedido->centro_operacion }}</td>
                                     <td>{{ date_format(date_create($pedido->fecha_pedido),"Y-m-d") }}</td>
+                                    <td>{{ $pedido->fechamovws }}</td>
                                     <td><h5><span class="badge badge-danger ">{{ $pedido->estadoenviows }}</span></h5></td>
                                     <td >{{ $pedido->msmovws }}</td>
                                     <td >
