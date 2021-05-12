@@ -184,9 +184,19 @@ class PedidoCore
                             
 
                         }
-                        $estado = "3";
-                        $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
 
+                        if( strrpos($error, "el tercero vendedor no existe o no esta configurado como vendedor")!==false){
+
+                            $error.=" Nombre vendedor: ".$pedido['vendedor']." Cedula vendedor: ".$pedido['cedula_vendedor'];
+                            $estado = "3";
+                            $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
+
+                        }else{
+                            $estado = "3";
+                            $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
+
+                        }
+                        
                     }
                     
                 }
