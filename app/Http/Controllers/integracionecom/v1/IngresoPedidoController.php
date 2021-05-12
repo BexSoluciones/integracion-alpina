@@ -51,6 +51,12 @@ class IngresoPedidoController extends Controller
             ], 412);
 
         }
+        $pedidosResp=[];
+        $pedidosRecib = $request->input('data');
+        foreach ($pedidosRecib as $key => $value) {
+            $pedidosResp[$key]['tipo_documento']=$value['tipo_documento'];
+            $pedidosResp[$key]['numero_pedido']=$value['numero_pedido'];
+        }
 
         try {
 
@@ -61,6 +67,7 @@ class IngresoPedidoController extends Controller
                 'created' => true,
                 'code' => 201,
                 'errors' =>0 ,
+                'pedidos_recibidos'=>$pedidosResp
             ], 201);
 
         } catch (\Exception $e) {
