@@ -46,9 +46,9 @@ class PedidoCore
             $cadena .= '2'; //Estado del documento
             $cadena .= '0'; //Indicador backorder del documento
             $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a facturar
-            $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a facturar
+            $cadena .= str_pad($pedido['sucursal_cliente'], 3, "0", STR_PAD_LEFT); //Sucursal cliente a facturar
             $cadena .= str_pad($pedido['nit_cliente'], 15, " ", STR_PAD_RIGHT); //Tercero cliente a despachar
-            $cadena .= $pedido['sucursal_cliente']; //Sucursal cliente a despachar
+            $cadena .= str_pad($pedido['sucursal_cliente'], 3, "0", STR_PAD_LEFT); //Sucursal cliente a despachar
             $cadena .= $pedido['tipo_cliente']; //Tipo de cliente
             $cadena .= $pedido['centro_operacion']; //Centro de operacion de la factura
             $cadena .= $this->sumarDias(date('Ymd'), 1); //Fecha Entrega pedido
