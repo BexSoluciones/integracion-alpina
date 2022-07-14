@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\integracionecom\v1;
+namespace App\Http\Controllers\integracionalpina\v1;
 
 use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
 use App\Models\ConexionesModel;
 use App\Traits\TraitHerramientas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Log;
 
 class CompraDevolucionCompraController extends Controller
 {

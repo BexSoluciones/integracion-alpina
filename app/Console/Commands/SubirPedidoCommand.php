@@ -12,7 +12,7 @@ use Log;
 class SubirPedidoCommand extends Command
 {
     
-    protected $signature = 'ecom:subir-pedido';
+    protected $signature = 'alpina:subir-pedido';
 
     protected $description = 'sube pedidos';
 

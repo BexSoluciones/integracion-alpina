@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\integracionecom\v1;
+namespace App\Http\Controllers\integracionalpina\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetallePedidoModel;
 use App\Models\EncabezadoPedidoModel;
 use App\Traits\TraitHerramientas;
 use Illuminate\Http\Request;
-use Log;
-use Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class IngresoPedidoController extends Controller
 {
@@ -308,7 +308,7 @@ class IngresoPedidoController extends Controller
 
         $rules = [
             'codigo_producto' => 'required',
-            'lista_precio' => 'required|size:2',
+            'lista_precio' => 'required|size:3',
             'cantidad' => 'required|digits_between:1,15',
             'precio_unitario' => 'required|regex:/^[0-9]+(\.[0-9]{1,4})?$/',
         ];

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\integracionecom\v1;
+namespace App\Http\Controllers\integracionalpina\v1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;

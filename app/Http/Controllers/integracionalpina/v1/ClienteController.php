@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\integracionecom\v1;
+namespace App\Http\Controllers\integracionalpina\v1;
 
 use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
 use App\Traits\TraitHerramientas;
 use App\Models\ConexionesModel;
 use App\Models\BodegasTiposDocModel;
+use App\Models\Criterios;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Log;
-use Storage;
-use Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ClienteController extends Controller
 {
@@ -54,7 +55,7 @@ class ClienteController extends Controller
         }
 
 
-        $respImpuestoClienteSiesa=$this->crearImpuestoCliente($datosCliente);
+        $respImpuestoClienteSiesa=$this->crearImpuestoCriterioCliente($datosCliente);
         
         if($respImpuestoClienteSiesa['created']===false){
             return response()->json([
@@ -155,15 +156,15 @@ class ClienteController extends Controller
         $apellido1 = $data['tipo_identificacion']=='C'? $data['apellido_1']: '';
         $apellido2 = $data['tipo_identificacion']=='C'? $data['apellido_2']: '';
         $razonSocial = $data['tipo_identificacion']=='N'? $data['razon_social']: '';
-        
+        $fecNac = date('Ymd');
         $cadena = "";
-        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
+        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
 
         $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
         $cadena .= str_pad('0200', 4, "0", STR_PAD_LEFT); //Tipo de registro
         $cadena .= '00'; //Subtipo de registro
-        $cadena .= '01'; //version del tipo de registro
-        $cadena .= '001'; //Compañia
+        $cadena .= '02'; //version del tipo de registro
+        $cadena .= '002'; //Compañia
         $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
         $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del tercero
         $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT);; //Numero de documento de identificación
@@ -192,8 +193,14 @@ class ClienteController extends Controller
         $cadena .= str_pad('', 20, " ", STR_PAD_RIGHT);//Fax
         $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT);//Codigo postal
         $cadena .= str_pad('factura720@gmail.com', 50, " ", STR_PAD_RIGHT);//Dirección de correo electrónico
+        $cadena .= str_pad($fecNac, 8, "0", STR_PAD_RIGHT); // Fecha nacimiento
+        if($data['tipo_identificacion']=='N'){
+            $cadena .= str_pad('4711', 4, "0", STR_PAD_LEFT); //Valida en maestro, código del actividad económica 
+        }elseif ($data['tipo_identificacion']=='C') {
+            $cadena .= str_pad('0081', 4, "0", STR_PAD_LEFT); //Valida en maestro, código del actividad económica 
+        }
         $cadena .= "\n";
-        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001002";
 
         $lineas = explode("\n", $cadena);
 
@@ -220,16 +227,15 @@ class ClienteController extends Controller
 
         
         $cadena = "";
-        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
+        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
 
         $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
         $cadena .= str_pad('0201', 4, "0", STR_PAD_LEFT); //Tipo de registro
         $cadena .= '00'; //Subtipo de registro
         $cadena .= '01'; //version del tipo de registro
-        $cadena .= '001'; //Compañia
+        $cadena .= '002'; //Compañia
         $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
         $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente
-        
         $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
         $cadena .= '1'; //Estado del cliente
         $cadena .= str_pad($data['nombre_contacto'], 40, " ", STR_PAD_RIGHT); //Razón social del cliente
@@ -250,11 +256,11 @@ class ClienteController extends Controller
         $cadena .= '0'; //Indicador de bloquea por mora
         $cadena .= '0'; //Indicador de factura unificada
         $cadena .= str_pad('', 3, " ", STR_PAD_RIGHT); //Centro de operación por defecto para facturación
-        $cadena .= str_pad('ECOM UNILEVER', 255, " ", STR_PAD_RIGHT); //Observaciones
+        $cadena .= str_pad('ALPINA', 255, " ", STR_PAD_RIGHT); //Observaciones
         $cadena .= str_pad($data['nombre_contacto'], 50, " ", STR_PAD_RIGHT); //contacto
         $cadena .= str_pad($data['direccion'], 40, " ", STR_PAD_RIGHT); //direccion1
-        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion2
-        $cadena .= str_pad('', 40, " ", STR_PAD_RIGHT); //direccion3
+        $cadena .= str_pad($data['nombre_establecimiento'], 40, " ", STR_PAD_RIGHT); //direccion2
+        $cadena .= str_pad($data['nit'].'-S-'.$data['sucursal'], 40, " ", STR_PAD_RIGHT); //direccion3
         $cadena .= '169'; //Pais
         $cadena .= $data['codigo_ciudad']; //Departamento - ciudad -> aca van las dos al tiempo
         $cadena .= str_pad($data['barrio'], 40, " ", STR_PAD_RIGHT); //Barrio
@@ -263,7 +269,7 @@ class ClienteController extends Controller
         $cadena .= str_pad('', 10, " ", STR_PAD_RIGHT); //Codigo postal
         $cadena .= str_pad('factura720@gmail.com', 50, " ", STR_PAD_RIGHT); //Direccion de correo electrónico
         $cadena .= "\n";
-        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001001";
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT)."99990001002";
 
         $lineas = explode("\n", $cadena);
 
@@ -287,17 +293,16 @@ class ClienteController extends Controller
 
     }
 
-    public function crearImpuestoCliente($data){
+    public function crearImpuestoCriterioCliente($data){
         //Asignar impuestos IVA
-        //$numRegistro=3;
         $cadena = "";
-        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001001\n"; // Linea 1
+        $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
 
         $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
         $cadena .= str_pad('0046', 4, "0", STR_PAD_LEFT); //Tipo de registro
         $cadena .= '00'; //Subtipo de registro
         $cadena .= '01'; //version del tipo de registro
-        $cadena .= '001'; //Compañia
+        $cadena .= '002'; //Compañia
         $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
         $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
         $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
@@ -305,14 +310,28 @@ class ClienteController extends Controller
         $cadena .= '01'; //Configuracion del tercero respecto al impuesto / retención
         $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
         $cadena .= "\n";
+
+        //Asignar impuestos IMPCO
+        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT); //Numero de registros
+        $cadena .= str_pad('0046', 4, "0", STR_PAD_LEFT); //Tipo de registro
+        $cadena .= '00'; //Subtipo de registro
+        $cadena .= '01'; //version del tipo de registro
+        $cadena .= '002'; //Compañia
+        $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+        $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
+        $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+        $cadena .= '003'; //Código de la clase de impuesto / retención
+        $cadena .= '01'; //Configuracion del tercero respecto al impuesto / retención
+        $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
+        $cadena .= "\n";
         
         //Asignar impuestos RETENCION
 
-        $cadena .= str_pad(3, 7, "0", STR_PAD_LEFT); //Numero de registros
+        $cadena .= str_pad(4, 7, "0", STR_PAD_LEFT); //Numero de registros
         $cadena .= str_pad('0047', 4, "0", STR_PAD_LEFT); //Tipo de registro
         $cadena .= '00'; //Subtipo de registro
         $cadena .= '01'; //version del tipo de registro
-        $cadena .= '001'; //Compañia
+        $cadena .= '002'; //Compañia
         $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
         $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
         $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
@@ -325,10 +344,30 @@ class ClienteController extends Controller
         $cadena .= str_pad('', 4, " ", STR_PAD_RIGHT); //Llave de impuesto / retención
         $cadena .= "\n";
 
+        // Criterios Clasificación clientes
+        $criteriosCliente = Criterios::get();
+        $count = 5;
+        foreach ($criteriosCliente as $key => $criterio) {
+            $cadena .= str_pad($count, 7, "0", STR_PAD_LEFT); //Numero de registros
+            $cadena .= str_pad('0207', 4, "0", STR_PAD_LEFT); //Tipo de registro
+            $cadena .= '00'; //Subtipo de registro
+            $cadena .= '01'; //version del tipo de registro
+            $cadena .= '002'; //Compañia
+            $cadena .= '0'; //Indica si remplaza la información del tercero cuando este ya existe --> se deja en cero porque debe respetar la información de siesa
+            $cadena .= str_pad($data['nit'], 15, " ", STR_PAD_RIGHT); //Código del cliente        
+            $cadena .= str_pad($data['sucursal'], 3, " ", STR_PAD_RIGHT); //Sucursal del cliente
+            $cadena .= str_pad($criterio['Plan'], 3," ", STR_PAD_RIGHT); // Plan de criterio de clasificación
+            $cadena .= str_pad($criterio['Criterio'], 10," ", STR_PAD_RIGHT); // Mayor de criterio de clasificación
+            $cadena .= "\n";
+
+            $count++;
+        }
+
+
         //$numRegistro=$numRegistro+1;
         
         
-        $cadena .= str_pad(4, 7, "0", STR_PAD_LEFT)."99990001001";
+        $cadena .= str_pad($count, 7, "0", STR_PAD_LEFT)."99990001002";
 
         $lineas = explode("\n", $cadena);
 

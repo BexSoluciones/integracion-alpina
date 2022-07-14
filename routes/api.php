@@ -29,14 +29,14 @@ Route::group([
       'middleware' => 'auth:api'
     ], function() {
         Route::get('logout', 'Auth\AuthController@logout');
-        Route::get('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@getPedidoSiesa');
+        Route::get('integracionalpina/v1/pedidos', 'integracionalpina\v1\PedidoController@getPedidoSiesa');
         //Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\PedidoController@subirPedidoSiesa'); 
-        Route::post('integracionecom/v1/pedidos', 'integracionecom\v1\IngresoPedidoController@recibirPedidoJson');
+        Route::post('integracionalpina/v1/pedidos', 'integracionalpina\v1\IngresoPedidoController@recibirPedidoJson');
         
-        Route::get('integracionecom/v1/log-pedidos', 'integracionecom\v1\LogPedidoController@getLogPedido');
-        Route::get('integracionecom/v1/compras-devolucion-compras', 'integracionecom\v1\CompraDevolucionCompraController@getComprasDevolucionesCompra');
-        Route::get('integracionecom/v1/inventarios', 'integracionecom\v1\InventarioController@getInventario');
-        Route::post('integracionecom/v1/clientes', 'integracionecom\v1\ClienteController@saveCliente');
-        Route::post('integracionecom/v1/facturas', 'integracionecom\v1\FacturaController@subirFacturaSiesa');
+        Route::get('integracionalpina/v1/log-pedidos', 'integracionalpina\v1\LogPedidoController@getLogPedido');
+        Route::get('integracionalpina/v1/compras-devolucion-compras', 'integracionalpina\v1\CompraDevolucionCompraController@getComprasDevolucionesCompra');
+        Route::get('integracionalpina/v1/inventarios', 'integracionalpina\v1\InventarioController@getInventario');
+        Route::post('integracionalpina/v1/clientes', 'integracionalpina\v1\ClienteController@saveCliente');
+        Route::post('integracionalpina/v1/facturas', 'integracionalpina\v1\FacturaController@subirFacturaSiesa');
     });
 });
