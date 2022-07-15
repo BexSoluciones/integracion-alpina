@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\integracionecom\v1;
+namespace App\Http\Controllers\integracionalpina\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\LogErrorImportacionModel;
-use Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LogPedidoController extends Controller
 {
