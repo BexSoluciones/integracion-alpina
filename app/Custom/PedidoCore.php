@@ -221,7 +221,7 @@ class PedidoCore
     public function obtenerCodigoProductoSiesa($productoEcom)
     {
         $parametros = [
-            ['PARAMETRO1' => $productoEcom],
+            ['PARAMETRO1' => 'APL'. $productoEcom],
         ];
         return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);
 
