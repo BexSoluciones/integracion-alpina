@@ -151,7 +151,7 @@ class PedidoCore
             Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
             $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
 
-            if (!$this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT)) && $importar === true) {
+            if (!$this->existePedidoSiesa('2', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT)) && $importar === true) {
                 
                 // Log::info("ejecutando funcion ".__FUNCTION__." .Pedido = ".$pedido['numero_pedido']);
 
@@ -201,7 +201,7 @@ class PedidoCore
                     
                 }
 
-            } elseif ($this->existePedidoSiesa('1', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+            } elseif ($this->existePedidoSiesa('2', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
                 $error = "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s');
                 $estado = "2";
                 $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
