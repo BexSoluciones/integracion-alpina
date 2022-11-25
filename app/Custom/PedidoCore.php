@@ -10,8 +10,7 @@ use App\Models\ConexionesModel;
 use App\Models\LogErrorImportacionModel;
 use App\Traits\TraitHerramientas;
 use Illuminate\Support\Facades\Storage;
-use Log;
-
+use Illuminate\Support\Facades\Log;
 
 class PedidoCore
 {
@@ -26,10 +25,11 @@ class PedidoCore
     {
         
         if (count($detallesPedido) > 0) {
+
+            $datosClienteSiesa = $this->obtenerDatosClienteSiesa($pedido);
             $importar = true;
             $cadena = "";
             $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
-
             $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
             $cadena .= str_pad(430, 4, "0", STR_PAD_LEFT); //Tipo de registro
             $cadena .= '00'; //Subtipo de registro
@@ -61,7 +61,7 @@ class PedidoCore
             $cadena .= '00000001.0000'; //Tasa de conversión
             $cadena .= 'COP'; //Moneda local
             $cadena .= '00000001.0000'; //Tasa local
-            $cadena .= 'C01'; //Condicion de pago
+            $cadena .= str_pad($datosClienteSiesa[0]['conpag'],3," ", STR_PAD_LEFT); //Condicion de pago
             $cadena .= '0'; //Estado de impresión del documento
             $cadena .= str_pad($this->quitarSaltosLinea($this->sanear_string($pedido['observaciones_pedido'] . "//------Vendedor:" . $pedido['vendedor'] . "")), 2000, " ", STR_PAD_RIGHT); //Observaciones del documento
             $cadena .= str_pad('', 15, " ", STR_PAD_LEFT); //cliente de contado
@@ -88,7 +88,7 @@ class PedidoCore
 
             foreach ($detallesPedido as $key => $detallePedido) {
                 //---Declarando variables
-                $listaPrecio = $detallePedido['lista_precio'];
+                $listaPrecio = $datosClienteSiesa[0]['precio'];
                 $productoSiesa = $this->obtenerCodigoProductoSiesa($detallePedido['codigo_producto']);
                 
                 if (!empty($productoSiesa)) {
@@ -216,6 +216,14 @@ class PedidoCore
         }
 
 
+    }
+
+    public function obtenerDatosClienteSiesa($datosCliente){
+        $parametros = [
+            ['PARAMETRO1' => $datosCliente['nit_cliente']],
+            ['PARAMETRO2' => $datosCliente['sucursal_cliente']],
+        ];
+        return $this->getWebServiceSiesa(37)->ejecutarConsulta($parametros);
     }
 
     public function obtenerCodigoProductoSiesa($productoEcom)
