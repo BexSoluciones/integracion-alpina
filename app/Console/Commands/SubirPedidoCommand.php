@@ -7,7 +7,7 @@ use App\Models\EncabezadoPedidoModel;
 use App\Models\DetallePedidoModel;
 use App\Jobs\ProcessSubirPedidoSiesa;
 use App\Custom\PedidoCore;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class SubirPedidoCommand extends Command
 {
@@ -23,7 +23,7 @@ class SubirPedidoCommand extends Command
 
     public function handle()
     {
-        $pedidos=$this->obtenerPedidos();
+        $pedidos=$this->obtenerPedidos('0');
         if(!empty($pedidos)){
             foreach ($pedidos as $key => $pedido) {
                 $objPedidoDetalle = new DetallePedidoModel();
@@ -32,7 +32,7 @@ class SubirPedidoCommand extends Command
             }
         }
 
-        $pedidosSinConexion=$this->obtenerPedidosErrorWs();
+        $pedidosSinConexion=$this->obtenerPedidos('4');
         if(!empty($pedidosSinConexion)){
             foreach ($pedidosSinConexion as $key => $pedido) {
                 $objPedidoDetalle = new DetallePedidoModel();
@@ -40,30 +40,10 @@ class SubirPedidoCommand extends Command
                 ProcessSubirPedidoSiesa::dispatch($pedido,$detallePedido);
             }
         }
-
-        // $pedidos=$this->obtenerPedidos();
-        // if(!empty($pedidos)){
-        //     foreach ($pedidos as $key => $pedido) {
-        //         $objPedidoDetalle = new DetallePedidoModel();
-        //         $detallePedido = $objPedidoDetalle->obtenerDetallePedido($pedido['numero_pedido'],$pedido['centro_operacion'],$pedido['tipo_documento'],$pedido['bodega']);
-        //         $objPedidoCore= new PedidoCore();
-        //         $objPedidoCore->subirPedidoSiesa($pedido,$detallePedido);
-        //     }
-        // }
     }
 
-    public function obtenerPedidos()
+    public function obtenerPedidos($estado)
     {
-        $estado="0";
-        $objPedidoEncabezado = new EncabezadoPedidoModel();
-        return $objPedidoEncabezado->obtenerPedidoEncabezado($estado);
+        return json_decode(json_encode(EncabezadoPedidoModel::where('estadoenviows', $estado)->get()),true);
     }
-
-    public function obtenerPedidosErrorWs()
-    {
-        $estado="4";
-        $objPedidoEncabezado = new EncabezadoPedidoModel();
-        return $objPedidoEncabezado->obtenerPedidoEncabezado($estado);
-    }
-
 }

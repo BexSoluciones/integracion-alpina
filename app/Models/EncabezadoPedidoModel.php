@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use DB;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class EncabezadoPedidoModel extends Model
 {
@@ -78,25 +78,4 @@ class EncabezadoPedidoModel extends Model
         'vendedor',        
     ];
     public $timestamps=false;
-    //eloquent
-    // public function obtenerPedidoEncabezado($estadoPedido){
-    //     $datos=$this->where('estadoenviows','=',$estadoPedido)
-    //                 ->get();
-    //     // dump($datos);
-    //     if(count($datos)>0){
-    //         return $datos;
-    //     }else{
-    //         return null;
-    //     }
-    // }
-
-    //DB
-    public function obtenerPedidoEncabezado($estado){
-        $sql="select * from ".$this->table." where estadoenviows='".$estado."'";          
-        $resultadoSql = DB::select($sql);
-        //log::info($resultadoSql);     
-        return json_decode(json_encode($resultadoSql),true);
-    }
-
-
 }
