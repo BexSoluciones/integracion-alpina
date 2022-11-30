@@ -24,7 +24,7 @@
                       </form>
                       <hr>
                         <table class="table table-condensed table-striped" style="font-size:0.7rem;">
-                            <thead class="thead-dark">
+                            <thead class="thead-dark text-center">
                               <tr>
                                 <th scope="col" width="10%">Número pedido</th>
                                 <th scope="col" width="10%">Tipo doc.</th>
@@ -33,7 +33,8 @@
                                 <th scope="col" width="14%">Fecha webservice</th>
                                 <th scope="col" width="6%">Cód. estado</th>
                                 <th scope="col" width="34%">Mensaje error</th>
-                                <th scope="col" width="6%">Acción</th>
+                                <th class = "text-right" scope="col" width="6%">Acción</th>
+                                <th class = "text-dark"scope="col" width="6%">Acción</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -49,9 +50,13 @@
                                     <td>{{ $pedido->fechamovws }}</td>
                                     <td><h5><span class="badge badge-danger ">{{ $pedido->estadoenviows }}</span></h5></td>
                                     <td >{{ $pedido->msmovws }}</td>
-                                    <td >
+                                    <td>
                                         <input type="hidden" name="pedido" id="pedido" value="{{ $pedido->numero_pedido.'|'.$pedido->tipo_documento.'|'.$pedido->centro_operacion.'|'.$pedido->bodega }}">
                                         <button type="button" class="btn btn-primary reenviar" id="{{ $pedido->numero_pedido }}">Reenviar</button>
+                                    </td>
+                                    <td>
+                                        <input type="hidden" name="pedido" id="pedido" value="{{ $pedido->numero_pedido.'|'.$pedido->tipo_documento.'|'.$pedido->centro_operacion.'|'.$pedido->bodega }}">
+                                        <button type="button" class="btn btn-danger inactivar" id="{{ $pedido->numero_pedido }}">Inactivar</button>
                                     </td>
                                   </tr>
                                 @endforeach
@@ -115,6 +120,48 @@
 
 
 
+            }
+
+        })
+        .fail(function (jqXHR, ajaxOptions, thrownError) {
+            alert("El servidor no responde");
+        });
+
+     });
+
+         $(".inactivar").click(function(){
+
+    //    alert($(this).attr("id")) ;
+         //declarando objetos
+         $textPedido= $(this).siblings('#pedido');
+         $trPedido= $(this).parent().parent();
+
+         //declarando variables
+         pedido = $textPedido.val();
+
+        //  $trPedido.css("background", "#e3342f");
+
+        $.ajax({
+        async: true,
+        cache: false,
+        type: 'get',
+        url: base_path+'/inactivar-pedido',
+        data:{
+            pedido: pedido
+        },
+        beforeSend: function () {
+            $(this).attr('value', 'Cargando....');
+            console.log("cargando...");
+        }
+    })
+        .done(function (respuesta) {
+
+            console.log(respuesta);
+
+            if(respuesta.renviado==true){
+
+                $trPedido.remove();
+                alert(respuesta.mensaje);
             }
 
         })
