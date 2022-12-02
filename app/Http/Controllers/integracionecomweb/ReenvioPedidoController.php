@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EncabezadoPedidoModel;
 use App\Models\LogErrorImportacionModel;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class ReenvioPedidoController extends Controller
 {
@@ -18,9 +18,10 @@ class ReenvioPedidoController extends Controller
     
     public function index(Request $request)
     {
-// dump($request->all());
+        // dump($request->all());
 
         $buscar =$request->input('buscar');
+        
         $registrosXpagina=100;
         if(!empty($buscar)){
             $pedidosError = EncabezadoPedidoModel::where('estadoenviows', '=', "3")->where('numero_pedido','=',$buscar)->paginate($registrosXpagina);
@@ -38,7 +39,6 @@ class ReenvioPedidoController extends Controller
             $pedido= $request->input('pedido');
             $arrayLlave= explode("|",$pedido);
     
-            // Log::info($arrayLlave);
             $centroOperacion= $arrayLlave[2];
             $numeroPedido   = $arrayLlave[0];
             $bodega= $arrayLlave[3];
@@ -50,6 +50,34 @@ class ReenvioPedidoController extends Controller
     
             return response()->json([
                 'mensaje'=>'Pedido actualizado',
+                'renviado' => true
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'mensaje'=>'Error al actualizar pedido',
+                'renviado' => false
+            ], 200);
+        }
+    }
+
+    public function inactivarPedido(Request $request){        
+
+        try {
+            $pedido= $request->input('pedido');
+            $arrayLlave= explode("|",$pedido);
+    
+            $centroOperacion= $arrayLlave[2];
+            $numeroPedido   = $arrayLlave[0];
+            $bodega= $arrayLlave[3];
+            $tipoDocumento= $arrayLlave[1];
+            $estado="2";
+            $msg = "Se inactiva pedido por web";
+    
+            $updatePedido= new LogErrorImportacionModel();
+            $updatePedido->actualizarEstadoDocumento($msg,$estado,$centroOperacion,$bodega,$tipoDocumento,$numeroPedido);
+    
+            return response()->json([
+                'mensaje'=>'Se inactiva pedido',
                 'renviado' => true
             ], 200);
         } catch (\Exception $e) {
