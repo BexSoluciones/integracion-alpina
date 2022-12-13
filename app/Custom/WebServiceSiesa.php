@@ -3,9 +3,9 @@
 namespace App\Custom;
 
 use App\Models\ConexionesModel;
-use Log;
 use SoapClient;
 use DB;
+use Illuminate\Support\Facades\Log;
 
 class WebServiceSiesa
 {
@@ -221,7 +221,7 @@ class WebServiceSiesa
         
 
         
-
+        $parm['connection_timeout'] = '3600';
         $parm['pvstrxmlParametros'] = "<Consulta>
 												<NombreConexion>" . $this->conexion . "</NombreConexion>
 												<IdCia>" . $this->idCia . "</IdCia>
