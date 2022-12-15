@@ -18,22 +18,19 @@ class PedidoCore
 
     public function __construct()
     {
-        
     }
 
-    public function subirPedidoSiesa($pedido,$detallesPedido)
+    public function subirPedidoSiesa($pedido, $detallesPedido)
     {
-        
         if (count($detallesPedido) > 0) {
-
             $datosClienteSiesa = $this->obtenerDatosClienteSiesa($pedido);
-
             if(empty(trim($datosClienteSiesa[0]['precio'])) || empty(trim($datosClienteSiesa[0]['conpag']))){
                 $error = "El cliente con NIT ".$pedido['nit_cliente'] ." y sucursal " .$pedido['sucursal_cliente'] ." No tiene asignado lista de precios o condición de pago en SIESA.";
                 $estado = "3";
                 $importar = false;
                 return $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
-            }else{
+            }
+            if (!empty($datosClienteSiesa)) {
                 $importar = true;
                 $cadena = "";
                 $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
@@ -197,18 +194,21 @@ class PedidoCore
                     $estado = "2";
                     $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
                 }
+            } else {
+                $error = 'El siguiente cliente no existe: NIT: '.$pedido['nit_cliente']. ' SUC: '.$pedido['sucursal_cliente'];
+                $estado = "3";
+                $importar = false;
+                $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
             }
-        }else {
+        } else {
             $error = 'El pedido no tiene productos asignados';
             $estado = "3";
             $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
-
         }
-
-
     }
 
-    public function obtenerDatosClienteSiesa($datosCliente){
+    public function obtenerDatosClienteSiesa($datosCliente)
+    {
         $parametros = [
             ['PARAMETRO1' => $datosCliente['nit_cliente']],
             ['PARAMETRO2' => $datosCliente['sucursal_cliente']],
@@ -222,7 +222,6 @@ class PedidoCore
             ['PARAMETRO1' => 'APL'. $productoEcom],
         ];
         return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);
-
     }
 
     public function getWebServiceSiesa($idConexion)
@@ -232,7 +231,6 @@ class PedidoCore
 
     public function validarTipoDocumento($tipoDoc, $bodega)
     {
-
         $objBodegaTipoDo = new BodegasTiposDocModel();
         $resp = $objBodegaTipoDo->validarTipoDocumento($tipoDoc, $bodega);
 
@@ -253,12 +251,10 @@ class PedidoCore
     {
         $objErrorImpPed = new LogErrorImportacionModel();
         $result = $objErrorImpPed->actualizarEstadoDocumento($mensaje, $estado, $centroOperacion, $bodega, $tipoDocumento, $numeroPedido);
-        
     }
 
     public function crearXmlPedido($lineas, $idOrder)
     {
-
         $datosConexionSiesa = $this->getConexionesModel()->getConexionXid(14);
         $xmlPedido = "<?xml version='1.0' encoding='utf-8'?>
         <Importar>
@@ -269,7 +265,6 @@ class PedidoCore
         <Datos>\n";
         $datos = "";
         foreach ($lineas as $key => $linea) {
-
             $xmlPedido .= "        <Linea>" . $linea . "</Linea>\n";
             $datos .= "        <Linea>" . $linea . "</Linea>\n";
         }
@@ -280,7 +275,6 @@ class PedidoCore
         Storage::disk('local')->put('pandapan/pedidos/' . $nombreArchivo, $xmlPedido);
 
         return $datos;
-
     }
     public function getConexionesModel()
     {
@@ -289,7 +283,6 @@ class PedidoCore
 
     public function existePedidoSiesa($idCia, $tipoDocumento, $numDoctoReferencia)
     {
-
         $parametros = [
             ['PARAMETRO1' => $idCia],
             ['PARAMETRO2' => $tipoDocumento],
@@ -302,7 +295,5 @@ class PedidoCore
         } else {
             return false;
         }
-
     }
-
 }
