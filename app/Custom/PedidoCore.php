@@ -27,6 +27,14 @@ class PedidoCore
         if (count($detallesPedido) > 0) {
 
             $datosClienteSiesa = $this->obtenerDatosClienteSiesa($pedido);
+
+            if(empty(trim($datosClienteSiesa[0]['precio'])) || empty(trim($datosClienteSiesa[0]['conpag']))){
+                $error = "El cliente con NIT ".$pedido['nit_cliente'] ." y sucursal " .$pedido['sucursal_cliente'] ." No tiene asignado lista de precios o condición de pago en SIESA.";
+                $estado = "3";
+                $importar = false;
+                return $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);
+            }
+            
             $importar = true;
             $cadena = "";
             $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
