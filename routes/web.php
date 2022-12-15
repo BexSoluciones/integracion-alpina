@@ -45,3 +45,4 @@ Route::post('email/resend', 'Auth\VerificationController@resend')->name('verific
 
 Route::get('/reenviopedido', 'integracionecomweb\ReenvioPedidoController@index')->name('reenviopedido');
 Route::get('/reenviar-pedido', 'integracionecomweb\ReenvioPedidoController@reenviarPedido')->name('reenviar-pedido');
+Route::get('/inactivar-pedido', 'integracionecomweb\ReenvioPedidoController@inactivarPedido')->name('inactivar-pedido');
