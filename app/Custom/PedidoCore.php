@@ -218,9 +218,19 @@ class PedidoCore
 
     public function obtenerCodigoProductoSiesa($productoEcom)
     {
-        $parametros = [
-            ['PARAMETRO1' => 'APL'. $productoEcom],
-        ];
+        $resp = strpos($productoEcom, 'C');
+        if ($resp === 0) {
+            $parametros = [
+                ['PARAMETRO1' => 'AP'. $productoEcom],
+            ];
+            // return true;
+        } else {
+            $parametros = [
+                ['PARAMETRO1' => 'APL'. $productoEcom],
+            ];
+            // return false;
+        }
+        Log::info($parametros);
         return $this->getWebServiceSiesa(34)->ejecutarConsulta($parametros);
     }
 
