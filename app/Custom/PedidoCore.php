@@ -133,7 +133,7 @@ class PedidoCore
                         $cadena .= str_pad('', 255, " ", STR_PAD_LEFT); //Notas
                         $cadena .= str_pad('', 2000, " ", STR_PAD_LEFT); //Descripcion
                         $cadena .= '5'; //Indicador backorder del movimiento
-                        $cadena .= '2'; //Indicador de precio
+                        $cadena .= '1'; //Indicador de precio
                         $cadena .= "\n";
                         $contador++;
                         $contadorDetallePedido++;
