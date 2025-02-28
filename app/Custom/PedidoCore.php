@@ -33,12 +33,12 @@ class PedidoCore
             if (!empty($datosClienteSiesa)) {
                 $importar = true;
                 $cadena = "";
-                $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001002\n"; // Linea 1
+                $cadena .= str_pad(1, 7, "0", STR_PAD_LEFT) . "00000001008\n"; // Linea 1
                 $cadena .= str_pad(2, 7, "0", STR_PAD_LEFT); //Numero de registros
                 $cadena .= str_pad(430, 4, "0", STR_PAD_LEFT); //Tipo de registro
                 $cadena .= '00'; //Subtipo de registro
                 $cadena .= '02'; //version del tipo de registro
-                $cadena .= '002'; //Compañia
+                $cadena .= '008'; //Compañia
                 $cadena .= '1'; //Indicador para liquidar impuestos
                 $cadena .= '0'; //Indica si el numero consecutivo de docto es manual o automático
                 $cadena .= '1'; //Indicador de contacto
@@ -104,7 +104,7 @@ class PedidoCore
                         $cadena .= '0431'; //Tipo registro
                         $cadena .= '00'; //Subtipo registro
                         $cadena .= '02'; //Version del tipo de registro
-                        $cadena .= '002'; //compañia
+                        $cadena .= '008'; //compañia
                         $cadena .= $pedido['centro_operacion']; //Centro de operacion
                         $cadena .= $pedido['tipo_documento']; //Tipo de documento
                         $cadena .= str_pad($pedido['numero_pedido'], 8, "0", STR_PAD_LEFT); //Consecutivo de documento
@@ -145,7 +145,7 @@ class PedidoCore
                     }
                 }
 
-                $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT) . "99990001002";
+                $cadena .= str_pad($contador, 7, "0", STR_PAD_LEFT) . "99990001008";
 
                 $lineas = explode("\n", $cadena);
 
@@ -153,7 +153,7 @@ class PedidoCore
                 Storage::disk('local')->put('pandapan/pedidos_txt/' . $nombreArchivo, $cadena);
                 $xmlPedido = $this->crearXmlPedido($lineas, $pedido['numero_pedido']);
 
-                if (!$this->existePedidoSiesa('2', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT)) && $importar === true) {
+                if (!$this->existePedidoSiesa('8', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT)) && $importar === true) {
                     // Log::info("ejecutando funcion ".__FUNCTION__." .Pedido = ".$pedido['numero_pedido']);
 
                     $resp = $this->getWebServiceSiesa(28)->importarXml($xmlPedido);
@@ -189,7 +189,7 @@ class PedidoCore
                             }
                         }
                     }
-                } elseif ($this->existePedidoSiesa('2', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
+                } elseif ($this->existePedidoSiesa('8', $pedido['tipo_documento'], str_pad($pedido['numero_pedido'], 15, "Y", STR_PAD_LEFT))) {
                     $error = "Este pedido ya fue registrado anteriormente, por favor verificar. Fecha de ejecucion: " . date('Y-m-d h:i:s');
                     $estado = "2";
                     $this->logErrorImportarPedido($error, $estado, $pedido['centro_operacion'], $pedido['bodega'], $pedido['tipo_documento'], $pedido['numero_pedido']);

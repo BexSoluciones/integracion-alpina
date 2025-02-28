@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\integracionecom\v1;
+namespace App\Http\Controllers\integracionalpina\v1;
 
 use App\Custom\WebServiceSiesa;
 use App\Http\Controllers\Controller;
